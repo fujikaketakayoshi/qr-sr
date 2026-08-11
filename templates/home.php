@@ -16,6 +16,7 @@
             <div><dt>データベース</dt><dd>接続済み</dd></div>
             <div><dt>スキーマ</dt><dd><?= htmlspecialchars((string) $migrationCount, ENT_QUOTES, 'UTF-8') ?>件適用済み</dd></div>
         </dl>
+        <p><a class="button" href="<?= htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8') ?>">管理画面を開く</a></p>
     </main>
 </body>
 </html>

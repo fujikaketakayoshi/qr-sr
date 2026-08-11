@@ -30,4 +30,12 @@ final class TemplateRenderer
 
         return (string) ob_get_clean();
     }
+
+    /** @param array<string, mixed> $data */
+    public function renderWithLayout(string $template, array $data = [], string $layout = 'admin/layout.php'): string
+    {
+        $content = $this->render($template, $data);
+
+        return $this->render($layout, array_merge($data, ['content' => $content]));
+    }
 }

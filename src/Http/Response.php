@@ -34,4 +34,9 @@ final class Response
     {
         return $this->status;
     }
+
+    public static function redirect(string $url, int $status = 303): self
+    {
+        return new self('', $status, ['Location' => $url]);
+    }
 }

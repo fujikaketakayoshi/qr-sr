@@ -33,6 +33,7 @@ final class Config
             'env' => self::environment('APP_ENV'),
             'base_url' => self::environment('APP_BASE_URL'),
             'database_path' => self::environment('APP_DATABASE_PATH'),
+            'app_key' => self::environment('APP_KEY'),
         ];
 
         foreach ($overrides as $key => $value) {
@@ -94,12 +95,16 @@ final class Config
         $required = [
             'env' => 'string',
             'base_url' => 'string',
+            'app_key' => 'string',
+            'timezone' => 'string',
             'debug' => 'boolean',
             'log_level' => 'string',
             'cookie_secure' => 'boolean',
             'allow_development_tools' => 'boolean',
             'database_path' => 'string',
             'database_busy_timeout_ms' => 'integer',
+            'session_name' => 'string',
+            'session_lifetime_seconds' => 'integer',
         ];
 
         foreach ($required as $key => $type) {
@@ -120,8 +125,24 @@ final class Config
             throw new InvalidArgumentException('APP_BASE_URL must end with a slash.');
         }
 
+        if (strlen($values['app_key']) < 64) {
+            throw new InvalidArgumentException('app_key must contain at least 64 characters.');
+        }
+
+        if (!in_array($values['timezone'], timezone_identifiers_list(), true)) {
+            throw new InvalidArgumentException('timezone must be a valid PHP timezone.');
+        }
+
         if ($values['database_busy_timeout_ms'] < 1 || $values['database_busy_timeout_ms'] > 30000) {
             throw new InvalidArgumentException('database_busy_timeout_ms must be between 1 and 30000.');
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_]{1,64}$/', $values['session_name'])) {
+            throw new InvalidArgumentException('session_name contains invalid characters.');
+        }
+
+        if ($values['session_lifetime_seconds'] < 300 || $values['session_lifetime_seconds'] > 86400) {
+            throw new InvalidArgumentException('session_lifetime_seconds must be between 300 and 86400.');
         }
 
         if ($values['env'] === 'production') {

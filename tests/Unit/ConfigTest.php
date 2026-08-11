@@ -60,12 +60,16 @@ final class ConfigTest extends TestCase
         $values = array_replace([
             'env' => 'development',
             'base_url' => 'http://127.0.0.1/',
+            'app_key' => str_repeat('a', 64),
+            'timezone' => 'Asia/Tokyo',
             'debug' => true,
             'log_level' => 'debug',
             'cookie_secure' => false,
             'allow_development_tools' => true,
             'database_path' => sys_get_temp_dir() . '/qr-test.sqlite',
             'database_busy_timeout_ms' => 5000,
+            'session_name' => 'qr_rally_admin',
+            'session_lifetime_seconds' => 7200,
         ], $overrides);
 
         file_put_contents($this->path, '<?php return ' . var_export($values, true) . ';');

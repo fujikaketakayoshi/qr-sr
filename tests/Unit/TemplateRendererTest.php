@@ -17,6 +17,7 @@ final class TemplateRendererTest extends TestCase
             'assetUrl' => 'http://example.test/assets/app.css',
             'environment' => '<production>',
             'migrationCount' => 1,
+            'adminUrl' => 'http://example.test/admin/',
         ]);
 
         self::assertStringContainsString('&lt;production&gt;', $html);

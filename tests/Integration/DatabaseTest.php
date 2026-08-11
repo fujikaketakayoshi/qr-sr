@@ -43,10 +43,13 @@ final class DatabaseTest extends TestCase
     {
         $migrator = new Migrator($this->database, dirname(__DIR__, 2) . '/database/migrations');
 
-        self::assertSame(['001_create_initial_schema.sql'], $migrator->migrate());
+        self::assertSame([
+            '001_create_initial_schema.sql',
+            '002_add_admin_login_attempts.sql',
+        ], $migrator->migrate());
         self::assertSame([], $migrator->migrate());
         self::assertSame('ok', $this->database->query('PRAGMA integrity_check')->fetchColumn());
-        self::assertSame(1, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(2, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(4, (int) $this->database->query('SELECT COUNT(*) FROM application_fields')->fetchColumn());
     }
 }

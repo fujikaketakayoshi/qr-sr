@@ -23,6 +23,35 @@ if (!is_file($configurationPath)) {
     fwrite(STDOUT, "Created config/app.php. Set APP_BASE_URL for this machine.\n");
 }
 
+$configuration = require $configurationPath;
+if (!is_array($configuration)) {
+    fwrite(STDERR, "config/app.php must return an array.\n");
+    exit(1);
+}
+
+$configurationChanged = false;
+if (!isset($configuration['app_key']) || !is_string($configuration['app_key']) || strlen($configuration['app_key']) < 64) {
+    $configuration['app_key'] = bin2hex(random_bytes(32));
+    $configurationChanged = true;
+}
+
+foreach (require $root . '/config/app.example.php' as $key => $default) {
+    if (!array_key_exists($key, $configuration)) {
+        $configuration[$key] = $default;
+        $configurationChanged = true;
+    }
+}
+
+if ($configurationChanged) {
+    $contents = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($configuration, true) . ";\n";
+    if (file_put_contents($configurationPath, $contents, LOCK_EX) === false) {
+        fwrite(STDERR, "Could not update config/app.php.\n");
+        exit(1);
+    }
+    @chmod($configurationPath, 0600);
+    fwrite(STDOUT, "Updated config/app.php with required local settings.\n");
+}
+
 $config = Config::load($configurationPath);
 if ($config->isProduction() || !$config->bool('allow_development_tools')) {
     fwrite(STDERR, "Local setup is disabled outside development.\n");

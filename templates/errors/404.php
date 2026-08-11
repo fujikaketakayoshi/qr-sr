@@ -1,0 +1,1 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ページが見つかりません</title></head><body><main><h1>ページが見つかりません</h1></main></body></html>

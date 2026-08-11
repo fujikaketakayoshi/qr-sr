@@ -6,6 +6,7 @@
 }
 
 body { margin: 0; }
+a { color: #087f5b; }
 .container { width: min(90%, 42rem); margin: 12vh auto; padding: 2rem; background: #fff; border-radius: 1rem; box-shadow: 0 1rem 3rem rgb(15 23 42 / 8%); }
 .eyebrow { color: #087f5b; font-size: .75rem; font-weight: 700; letter-spacing: .12em; }
 h1 { margin: .4rem 0 1rem; font-size: clamp(1.7rem, 5vw, 2.6rem); }
@@ -13,3 +14,49 @@ h1 { margin: .4rem 0 1rem; font-size: clamp(1.7rem, 5vw, 2.6rem); }
 .status div { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid #dfe7e4; }
 .status dt { font-weight: 700; }
 .status dd { margin: 0; color: #087f5b; }
+.button, button { display: inline-block; border: 0; border-radius: .55rem; padding: .75rem 1rem; color: #fff; background: #087f5b; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+.brand { color: #15201d; font-weight: 800; text-decoration: none; }
+.auth-card { width: min(calc(100% - 2rem), 28rem); box-sizing: border-box; margin: 8vh auto; padding: 2rem; background: #fff; border-radius: 1rem; box-shadow: 0 1rem 3rem rgb(15 23 42 / 8%); }
+.auth-card h1 { font-size: 1.8rem; }
+label { display: grid; gap: .4rem; margin-bottom: 1rem; font-weight: 700; }
+label span { color: #63716d; font-size: .78rem; font-weight: 400; }
+input, textarea { box-sizing: border-box; width: 100%; border: 1px solid #b8c5c1; border-radius: .5rem; padding: .7rem; background: #fff; color: #1f2937; font: inherit; }
+textarea { resize: vertical; }
+.error, .field-error { color: #a61b1b; }
+.error { border: 1px solid #f1b4b4; border-radius: .5rem; padding: .8rem; background: #fff1f1; }
+.field-error { font-size: .8rem; font-weight: 500; }
+.admin-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem max(1rem, calc((100% - 70rem) / 2)); background: #fff; border-bottom: 1px solid #dfe7e4; }
+.admin-header nav { display: flex; align-items: center; gap: 1rem; }
+.admin-header nav form { margin: 0; }
+.link-button { padding: 0; color: #087f5b; background: transparent; font-weight: 500; text-decoration: underline; }
+.admin-main { width: min(calc(100% - 2rem), 70rem); margin: 2rem auto; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.page-heading h1 { margin: 0; }
+.panel { padding: 1.5rem; background: #fff; border-radius: .8rem; box-shadow: 0 .3rem 1rem rgb(15 23 42 / 6%); }
+.empty-state { text-align: center; }
+.flash { padding: .8rem 1rem; border-radius: .5rem; }
+.flash-success { color: #075c42; background: #dff6ed; }
+.status-badge { display: inline-block; padding: .3rem .65rem; border-radius: 99rem; font-size: .8rem; font-weight: 800; }
+.status-active { color: #075c42; background: #dff6ed; }
+.status-upcoming { color: #744c00; background: #fff3cc; }
+.status-ended { color: #4b5563; background: #e5e7eb; }
+.status-paused { color: #991b1b; background: #fee2e2; }
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.summary div { padding: 1rem; background: #f4f7f6; border-radius: .5rem; }
+.summary dt { font-size: .8rem; font-weight: 700; }
+.summary dd { margin: .35rem 0 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.25rem; }
+.form-grid .wide { grid-column: 1 / -1; }
+fieldset { margin: 0 0 1rem; border: 1px solid #b8c5c1; border-radius: .6rem; padding: 1rem; }
+.checkbox { display: flex; align-items: center; }
+.checkbox input { width: auto; }
+.table-wrap { overflow-x: auto; background: #fff; border-radius: .8rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .8rem; border-bottom: 1px solid #dfe7e4; text-align: left; vertical-align: top; }
+th { font-size: .78rem; }
+.recovery-key { overflow-wrap: anywhere; padding: 1rem; border: 2px solid #087f5b; border-radius: .5rem; background: #effaf6; font-size: 1rem; white-space: pre-wrap; }
+@media (max-width: 48rem) {
+    .admin-header, .admin-header nav { align-items: flex-start; flex-direction: column; }
+    .form-grid, .summary { grid-template-columns: 1fr; }
+    .form-grid .wide { grid-column: auto; }
+}
