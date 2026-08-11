@@ -13,7 +13,7 @@ final class PasswordResetter
         private readonly AdminRepository $admins,
         private readonly AuditLogRepository $logs,
         private readonly PasswordPolicy $passwords,
-        private readonly RecoveryKey $recoveryKeys,
+        private readonly CredentialUpdater $credentials,
     ) {
     }
 
@@ -31,14 +31,14 @@ final class PasswordResetter
             return ['success' => false, 'message' => 'メールアドレスまたは復旧キーが正しくありません。'];
         }
 
-        $newRecoveryKey = $this->recoveryKeys->generate();
         $adminId = (int) $admin['id'];
-        $this->admins->resetPassword(
+        $newRecoveryKey = $this->credentials->update(
             $adminId,
-            password_hash($newPassword, PASSWORD_DEFAULT),
-            password_hash($newRecoveryKey, PASSWORD_DEFAULT),
+            (string) $admin['email'],
+            $newPassword,
+            'admin.password_reset',
+            'admin',
         );
-        $this->logs->record('admin.password_reset', 'admin', $adminId, 'success');
 
         return [
             'success' => true,

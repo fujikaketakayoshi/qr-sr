@@ -56,7 +56,7 @@ final class AdminAuth
         $_SESSION['admin_id'] = $adminId;
         $_SESSION['authenticated_at'] = time();
         $_SESSION['last_activity_at'] = time();
-        $_SESSION['password_fingerprint'] = hash('sha256', (string) $admin['password_hash']);
+        $_SESSION['auth_version'] = (int) $admin['auth_version'];
         $this->admins->recordLogin($adminId);
         $this->logs->record('admin.login', 'admin', $adminId, 'success');
 
@@ -67,14 +67,14 @@ final class AdminAuth
     {
         $id = $_SESSION['admin_id'] ?? null;
         $lastActivity = $_SESSION['last_activity_at'] ?? null;
-        $fingerprint = $_SESSION['password_fingerprint'] ?? null;
-        if (!is_int($id) || !is_int($lastActivity) || !is_string($fingerprint)
+        $authVersion = $_SESSION['auth_version'] ?? null;
+        if (!is_int($id) || !is_int($lastActivity) || !is_int($authVersion)
             || time() - $lastActivity > $this->sessionLifetime) {
             return null;
         }
 
         $admin = $this->admins->findById($id);
-        if ($admin === null || !hash_equals(hash('sha256', (string) $admin['password_hash']), $fingerprint)) {
+        if ($admin === null || (int) $admin['auth_version'] !== $authVersion) {
             return null;
         }
 

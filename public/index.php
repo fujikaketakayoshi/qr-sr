@@ -7,6 +7,7 @@ use QrRally\Http\Application;
 use QrRally\Http\Request;
 use QrRally\Http\Response;
 use QrRally\Auth\AdminAuth;
+use QrRally\Auth\CredentialUpdater;
 use QrRally\Auth\PasswordPolicy;
 use QrRally\Auth\PasswordResetter;
 use QrRally\Auth\RecoveryKey;
@@ -70,7 +71,12 @@ $controller = new AdminController(
     $csrf,
     $flash,
     $auth,
-    new PasswordResetter($admins, $logs, new PasswordPolicy(), new RecoveryKey()),
+    new PasswordResetter(
+        $admins,
+        $logs,
+        new PasswordPolicy(),
+        new CredentialUpdater($database, $admins, $logs, new RecoveryKey()),
+    ),
     new EventRepository($database),
     new EventValidator(),
     $logs,

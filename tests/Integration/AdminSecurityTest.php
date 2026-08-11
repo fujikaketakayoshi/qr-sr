@@ -7,6 +7,7 @@ namespace QrRally\Tests\Integration;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use QrRally\Auth\PasswordPolicy;
+use QrRally\Auth\CredentialUpdater;
 use QrRally\Auth\PasswordResetter;
 use QrRally\Auth\RecoveryKey;
 use QrRally\Database\ConnectionFactory;
@@ -54,7 +55,12 @@ final class AdminSecurityTest extends TestCase
             $admins,
             new AuditLogRepository($this->database),
             new PasswordPolicy(),
-            new RecoveryKey(),
+            new CredentialUpdater(
+                $this->database,
+                $admins,
+                new AuditLogRepository($this->database),
+                new RecoveryKey(),
+            ),
         );
         $result = $resetter->reset('admin@example.test', $originalKey, 'another-secure-password');
 
@@ -64,6 +70,7 @@ final class AdminSecurityTest extends TestCase
         self::assertTrue(password_verify('another-secure-password', $updated['password_hash']));
         self::assertFalse(password_verify($originalKey, $updated['recovery_key_hash']));
         self::assertTrue(password_verify($result['recovery_key'], $updated['recovery_key_hash']));
+        self::assertSame(2, $updated['auth_version']);
 
         $databaseDump = file_get_contents($this->directory . '/test.sqlite');
         self::assertStringNotContainsString('very-secure-password', $databaseDump);

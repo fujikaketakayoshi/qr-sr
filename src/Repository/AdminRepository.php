@@ -37,6 +37,14 @@ final class AdminRepository
         return (int) $this->database->query('SELECT COUNT(*) FROM admins')->fetchColumn();
     }
 
+    /** @return array<string, mixed>|null */
+    public function first(): ?array
+    {
+        $admin = $this->database->query('SELECT * FROM admins ORDER BY id LIMIT 1')->fetch();
+
+        return is_array($admin) ? $admin : null;
+    }
+
     public function create(string $email, string $passwordHash, string $recoveryKeyHash): int
     {
         $statement = $this->database->prepare(
@@ -61,14 +69,21 @@ final class AdminRepository
         $statement->execute(['id' => $id]);
     }
 
-    public function resetPassword(int $id, string $passwordHash, string $recoveryKeyHash): void
+    public function updateCredentials(
+        int $id,
+        string $email,
+        string $passwordHash,
+        string $recoveryKeyHash,
+    ): void
     {
         $statement = $this->database->prepare(
-            'UPDATE admins SET password_hash = :password_hash, recovery_key_hash = :recovery_key_hash, '
+            'UPDATE admins SET email = :email, password_hash = :password_hash, '
+            . 'recovery_key_hash = :recovery_key_hash, auth_version = auth_version + 1, '
             . "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id",
         );
         $statement->execute([
             'id' => $id,
+            'email' => mb_strtolower(trim($email)),
             'password_hash' => $passwordHash,
             'recovery_key_hash' => $recoveryKeyHash,
         ]);
