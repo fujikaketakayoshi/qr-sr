@@ -1,0 +1,34 @@
+{
+    "name": "fjkk/qr-stamp-rally",
+    "description": "Self-hosted QR digital stamp rally",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "QrRally\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "QrRally\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "@php vendor/bin/phpunit"
+    }
+}

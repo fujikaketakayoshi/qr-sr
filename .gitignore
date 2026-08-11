@@ -1,1 +1,10 @@
 project-docs/
+/vendor/
+/config/app.php
+/storage/*.sqlite
+/storage/*.sqlite-*
+/storage/logs/*.log
+/.phpunit.cache/
+
+!/storage/.gitkeep
+!/storage/logs/.gitkeep

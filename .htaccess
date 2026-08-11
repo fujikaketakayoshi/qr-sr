@@ -1,0 +1,17 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Keep application code, configuration, and local data outside the Web surface.
+    RewriteRule ^(?:bin|config|database|src|storage|templates|tests|vendor)(?:/|$) - [F,L,NC]
+    RewriteRule (^|/)\. - [F,L]
+
+    RewriteRule ^$ public/index.php [L]
+    RewriteRule ^assets/(.+)$ public/assets/$1 [L]
+    RewriteRule ^ public/index.php [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    DirectoryIndex public/index.php
+</IfModule>
