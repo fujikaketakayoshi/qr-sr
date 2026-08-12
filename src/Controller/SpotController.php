@@ -180,7 +180,15 @@ final class SpotController
         try {
             $this->spots->delete($id);
             $this->logs->record('spot.deleted', 'admin', $this->auth->id(), 'success', [], 'spot', $id);
-            $this->flash->set('success', 'スポットを削除しました。');
+            $remainingCount = $this->spots->count();
+            if ($remainingCount < (int) $event['required_stamp_count']) {
+                $this->flash->set(
+                    'error',
+                    "スポットを削除しました。残り{$remainingCount}件となり、達成条件を満たせません。イベント設定を見直してください。",
+                );
+            } else {
+                $this->flash->set('success', 'スポットを削除しました。');
+            }
         } catch (RuntimeException $error) {
             $this->flash->set('error', $error->getMessage());
         }

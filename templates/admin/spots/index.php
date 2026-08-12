@@ -15,7 +15,7 @@
         <a class="button small" href="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/qr"), ENT_QUOTES, 'UTF-8') ?>">QR確認</a>
         <a class="button small secondary" href="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/edit"), ENT_QUOTES, 'UTF-8') ?>">編集</a>
         <form method="post" action="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/toggle"), ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>"><button class="small secondary" type="submit"><?= $spot['is_active'] ? '停止' : '再開' ?></button></form>
-        <?php if ($canDelete && (int) $spot['acquisition_count'] === 0): ?><form method="post" action="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/delete"), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('このスポットを削除しますか？');"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>"><button class="small danger" type="submit">削除</button></form><?php endif; ?>
+        <?php if ($canDelete && (int) $spot['acquisition_count'] === 0): ?><?php $fallsBelowRequired = count($spots) - 1 < (int) $event['required_stamp_count']; ?><form method="post" action="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/delete"), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('<?= $fallsBelowRequired ? 'このスポットを削除すると、残りのスポット数が達成条件を下回り、新規参加者が達成できなくなります。削除後にイベント設定の達成条件を見直す必要があります。それでも削除しますか？' : 'このスポットを削除しますか？' ?>');"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>"><button class="small danger" type="submit">削除</button></form><?php endif; ?>
     </div>
 </article>
 <?php endforeach; ?>
