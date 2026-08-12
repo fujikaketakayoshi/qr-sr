@@ -7,6 +7,10 @@ Options -Indexes
     RewriteRule ^(?:bin|config|database|src|storage|templates|tests|vendor)(?:/|$) - [F,L,NC]
     RewriteRule (^|/)\. - [F,L]
 
+    # Development-only cookie probe endpoints. Exclude tools/ from distribution ZIPs.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^tools/cookie-probe/(?:index|page-a|page-b|reset)\.php$ - [L,NC]
+
     RewriteRule ^$ public/index.php [L]
     RewriteRule ^assets/(.+)$ public/assets/$1 [L]
     RewriteRule ^ public/index.php [L]

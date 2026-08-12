@@ -4,6 +4,7 @@ project-docs/
 /storage/*.sqlite
 /storage/*.sqlite-*
 /storage/logs/*.log
+/storage/cookie-probe-state.json
 /.phpunit.cache/
 
 !/storage/.gitkeep
