@@ -15,6 +15,7 @@ use QrRally\Http\Request;
 use QrRally\Http\Response;
 use QrRally\Repository\AuditLogRepository;
 use QrRally\Repository\EventRepository;
+use QrRally\Repository\SpotRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Session\Flash;
 use QrRally\Support\UrlGenerator;
@@ -32,6 +33,7 @@ final class AdminController
         private readonly AdminAuth $auth,
         private readonly PasswordResetter $passwordResetter,
         private readonly EventRepository $events,
+        private readonly SpotRepository $spots,
         private readonly EventValidator $eventValidator,
         private readonly AuditLogRepository $logs,
         private readonly string $timezone,
@@ -175,7 +177,7 @@ final class AdminController
             filter_var($request->input('required_stamp_count'), FILTER_VALIDATE_INT) ?: 0,
             $request->input('completion_message'),
         );
-        $errors = $this->eventValidator->validate($input, $this->timezone);
+        $errors = $this->eventValidator->validate($input, $this->timezone, $this->spots->count());
         if ($errors !== []) {
             return $this->eventForm($errors, $input, 422);
         }

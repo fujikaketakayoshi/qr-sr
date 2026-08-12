@@ -47,10 +47,11 @@ final class DatabaseTest extends TestCase
             '001_create_initial_schema.sql',
             '002_add_admin_login_attempts.sql',
             '003_add_admin_auth_version.sql',
+            '004_add_spot_token_version.sql',
         ], $migrator->migrate());
         self::assertSame([], $migrator->migrate());
         self::assertSame('ok', $this->database->query('PRAGMA integrity_check')->fetchColumn());
-        self::assertSame(3, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(4, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(4, (int) $this->database->query('SELECT COUNT(*) FROM application_fields')->fetchColumn());
     }
 }

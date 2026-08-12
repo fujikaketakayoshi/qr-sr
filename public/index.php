@@ -12,16 +12,21 @@ use QrRally\Auth\PasswordPolicy;
 use QrRally\Auth\PasswordResetter;
 use QrRally\Auth\RecoveryKey;
 use QrRally\Controller\AdminController;
+use QrRally\Controller\SpotController;
 use QrRally\Domain\EventValidator;
 use QrRally\Repository\AdminRepository;
 use QrRally\Repository\AuditLogRepository;
 use QrRally\Repository\EventRepository;
 use QrRally\Repository\LoginAttemptRepository;
+use QrRally\Repository\SpotRepository;
 use QrRally\Security\CsrfToken;
+use QrRally\Security\SpotToken;
 use QrRally\Session\Flash;
 use QrRally\Session\SessionManager;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
+use QrRally\Support\QrCodeGenerator;
+use QrRally\Domain\SpotValidator;
 use QrRally\View\TemplateRenderer;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -64,6 +69,7 @@ $auth = new AdminAuth(
     $config->string('app_key'),
     $config->int('session_lifetime_seconds'),
 );
+$spotRepository = new SpotRepository($database, new SpotToken($config->string('app_key')));
 $controller = new AdminController(
     $templates,
     new ViewData($urls, $csrf, $flash),
@@ -78,9 +84,23 @@ $controller = new AdminController(
         new CredentialUpdater($database, $admins, $logs, new RecoveryKey()),
     ),
     new EventRepository($database),
+    $spotRepository,
     new EventValidator(),
     $logs,
     $config->string('timezone'),
+);
+$spotController = new SpotController(
+    $templates,
+    new ViewData($urls, $csrf, $flash),
+    $urls,
+    $csrf,
+    $flash,
+    $auth,
+    $spotRepository,
+    new EventRepository($database),
+    $logs,
+    new SpotValidator(),
+    new QrCodeGenerator(),
 );
 $request = Request::fromGlobals();
 
@@ -95,6 +115,6 @@ if ($request->method() === 'GET' && $request->path($config->string('base_url')) 
     (new Response($body))->send();
 }
 
-(new Application($controller, $templates, $config->string('base_url')))
+(new Application($controller, $spotController, $templates, $config->string('base_url')))
     ->handle($request)
     ->send();

@@ -10,7 +10,7 @@ use DateTimeZone;
 final class EventValidator
 {
     /** @return array<string, string> */
-    public function validate(EventInput $input, string $timezone): array
+    public function validate(EventInput $input, string $timezone, ?int $registeredSpotCount = null): array
     {
         $errors = [];
         if ($input->name === '' || mb_strlen($input->name) > 100) {
@@ -40,6 +40,9 @@ final class EventValidator
         }
         if ($input->requiredStampCount < 1 || $input->requiredStampCount > 20) {
             $errors['required_stamp_count'] = '達成数は1〜20で入力してください。';
+        } elseif ($registeredSpotCount !== null && $registeredSpotCount > 0
+            && $input->requiredStampCount > $registeredSpotCount) {
+            $errors['required_stamp_count'] = "達成数は登録済みスポット数（{$registeredSpotCount}）以下にしてください。";
         }
         if ($input->isPaused && $input->pauseMessage === '') {
             $errors['pause_message'] = '一時停止中の案内を入力してください。';

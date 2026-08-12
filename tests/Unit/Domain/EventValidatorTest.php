@@ -31,4 +31,13 @@ final class EventValidatorTest extends TestCase
         self::assertArrayHasKey('required_stamp_count', $errors);
         self::assertArrayHasKey('pause_message', $errors);
     }
+
+    public function testRejectsRequiredCountAboveRegisteredSpots(): void
+    {
+        $input = new EventInput('イベント', '', '', '2026-08-11T10:00', '2026-08-11T18:00', false, '', 5, '');
+
+        $errors = (new EventValidator())->validate($input, 'Asia/Tokyo', 3);
+
+        self::assertArrayHasKey('required_stamp_count', $errors);
+    }
 }
