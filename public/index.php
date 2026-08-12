@@ -5,7 +5,6 @@ declare(strict_types=1);
 use QrRally\Http\ErrorHandler;
 use QrRally\Http\Application;
 use QrRally\Http\Request;
-use QrRally\Http\Response;
 use QrRally\Auth\AdminAuth;
 use QrRally\Auth\CredentialUpdater;
 use QrRally\Auth\PasswordPolicy;
@@ -13,14 +12,17 @@ use QrRally\Auth\PasswordResetter;
 use QrRally\Auth\RecoveryKey;
 use QrRally\Controller\AdminController;
 use QrRally\Controller\SpotController;
+use QrRally\Controller\ParticipantController;
 use QrRally\Domain\EventValidator;
 use QrRally\Repository\AdminRepository;
 use QrRally\Repository\AuditLogRepository;
 use QrRally\Repository\EventRepository;
 use QrRally\Repository\LoginAttemptRepository;
 use QrRally\Repository\SpotRepository;
+use QrRally\Repository\ParticipantRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Security\SpotToken;
+use QrRally\Security\ParticipantToken;
 use QrRally\Session\Flash;
 use QrRally\Session\SessionManager;
 use QrRally\Support\UrlGenerator;
@@ -104,19 +106,23 @@ $spotController = new SpotController(
     new QrCodeGenerator(),
     new DownloadFilename(),
 );
+$participantToken = new ParticipantToken();
+$participantController = new ParticipantController(
+    $templates,
+    new ViewData($urls, $csrf, $flash),
+    $urls,
+    $csrf,
+    new EventRepository($database),
+    $spotRepository,
+    new ParticipantRepository($database, $participantToken),
+    $participantToken,
+    $logs,
+    $config->string('app_key'),
+    $config->bool('cookie_secure'),
+    (string) (parse_url($config->string('base_url'), PHP_URL_PATH) ?: '/'),
+);
 $request = Request::fromGlobals();
 
-if ($request->method() === 'GET' && $request->path($config->string('base_url')) === '/') {
-    $count = (int) $database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn();
-    $body = $templates->render('home.php', [
-        'environment' => $config->string('env'),
-        'migrationCount' => $count,
-        'assetUrl' => $urls->to('assets/app.css'),
-        'adminUrl' => $urls->to('admin/'),
-    ]);
-    (new Response($body))->send();
-}
-
-(new Application($controller, $spotController, $templates, $config->string('base_url')))
+(new Application($controller, $spotController, $participantController, $templates, $config->string('base_url')))
     ->handle($request)
     ->send();

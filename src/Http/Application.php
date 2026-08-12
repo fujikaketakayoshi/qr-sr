@@ -6,6 +6,7 @@ namespace QrRally\Http;
 
 use QrRally\Controller\AdminController;
 use QrRally\Controller\SpotController;
+use QrRally\Controller\ParticipantController;
 use QrRally\View\TemplateRenderer;
 
 final class Application
@@ -13,6 +14,7 @@ final class Application
     public function __construct(
         private readonly AdminController $admin,
         private readonly SpotController $spots,
+        private readonly ParticipantController $participants,
         private readonly TemplateRenderer $templates,
         private readonly string $baseUrl,
     ) {
@@ -23,6 +25,9 @@ final class Application
         $route = $request->method() . ' ' . $request->path($this->baseUrl);
 
         $static = match ($route) {
+            'GET /' => $this->participants->home($request),
+            'POST /join' => $this->participants->join($request),
+            'GET /notices' => $this->participants->notices(),
             'GET /admin/login' => $this->admin->loginForm(),
             'POST /admin/login' => $this->admin->login($request),
             'POST /admin/logout' => $this->admin->logout($request),
@@ -60,7 +65,7 @@ final class Application
             };
         }
         if ($request->method() === 'GET' && preg_match('#^/spot/([^/]+)$#D', $path, $matches)) {
-            return $this->spots->publicPreview($matches[1]);
+            return $this->participants->spot($request, $matches[1]);
         }
 
         return new Response($this->templates->render('errors/404.php'), 404);

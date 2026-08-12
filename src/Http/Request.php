@@ -15,12 +15,13 @@ final class Request
         private readonly array $server,
         private readonly array $query = [],
         private readonly array $post = [],
+        private readonly array $cookies = [],
     ) {
     }
 
     public static function fromGlobals(): self
     {
-        return new self($_SERVER, $_GET, $_POST);
+        return new self($_SERVER, $_GET, $_POST, $_COOKIE);
     }
 
     public function method(): string
@@ -62,5 +63,12 @@ final class Request
     public function clientIp(): string
     {
         return (string) ($this->server['REMOTE_ADDR'] ?? 'unknown');
+    }
+
+    public function cookie(string $key): ?string
+    {
+        $value = $this->cookies[$key] ?? null;
+
+        return is_string($value) ? $value : null;
     }
 }

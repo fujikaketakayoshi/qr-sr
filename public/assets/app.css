@@ -74,10 +74,28 @@ button:disabled { cursor: not-allowed; opacity: .35; }
 .qr-image { display: block; width: min(100%, 28rem); margin: 0 auto; }
 .qr-url { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
 .qr-actions { justify-content: center; }
+.participant-header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem max(1rem, calc((100% - 48rem) / 2)); background: #fff; border-bottom: 1px solid #dfe7e4; }
+.participant-main { width: min(calc(100% - 2rem), 48rem); margin: 1.5rem auto 4rem; }
+.participant-hero { margin-bottom: 1.5rem; }
+.completion { margin-top: 1.25rem; padding: 1rem; color: #075c42; background: #dff6ed; border: 2px solid #46a985; border-radius: .8rem; }
+.completion h2 { margin-top: 0; }
+.stamp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.stamp-card { position: relative; min-height: 8rem; overflow: hidden; padding: 1rem; background: #fff; border: 2px dashed #b8c5c1; border-radius: .8rem; }
+.stamp-card h3 { margin: .45rem 0; }
+.stamp-acquired { border-style: solid; border-color: #46a985; background: #effaf6; }
+.spot-number { color: #63716d; font-size: .8rem; font-weight: 800; }
+.stamp-mark { position: absolute; right: .7rem; bottom: .5rem; display: grid; place-items: center; width: 4rem; height: 4rem; color: #b42318; border: .25rem double #b42318; border-radius: 50%; font-weight: 900; transform: rotate(-12deg); opacity: .82; }
+.spot-result { text-align: center; }
+.result-message { padding: 1rem; border-radius: .6rem; font-weight: 800; }
+.result-success { color: #075c42; background: #dff6ed; }
+.result-notice { color: #744c00; background: #fff3cc; }
+.result-error { color: #991b1b; background: #fee2e2; }
+.notice-list { padding-left: 1.4rem; line-height: 1.8; }
 @media (max-width: 48rem) {
     .admin-header, .admin-header nav { align-items: flex-start; flex-direction: column; }
     .form-grid, .summary { grid-template-columns: 1fr; }
     .form-grid .wide { grid-column: auto; }
     .spot-card, .qr-layout { grid-template-columns: 1fr; }
     .spot-order { flex-direction: row; }
+    .stamp-grid { grid-template-columns: 1fr; }
 }
