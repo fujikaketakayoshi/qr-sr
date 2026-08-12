@@ -68,6 +68,7 @@ button:disabled { cursor: not-allowed; opacity: .35; }
 .spot-details h2 { margin: .45rem 0; }
 .notice { margin-top: 1.25rem; border-left: .3rem solid #087f5b; }
 .notice-text { padding: 1rem; background: #e1f1eb; border-radius: .5rem; }
+.warning-text { padding: 1rem; color: #8a1c13; background: #fff1ef; border: 1px solid #f5b7b1; border-radius: .5rem; }
 .qr-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(18rem, .8fr); gap: 1.25rem; align-items: start; }
 .qr-panel { text-align: center; }
 .qr-image { display: block; width: min(100%, 28rem); margin: 0 auto; }

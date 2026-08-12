@@ -26,6 +26,7 @@ use QrRally\Session\SessionManager;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
 use QrRally\Support\QrCodeGenerator;
+use QrRally\Support\DownloadFilename;
 use QrRally\Domain\SpotValidator;
 use QrRally\View\TemplateRenderer;
 
@@ -101,6 +102,7 @@ $spotController = new SpotController(
     $logs,
     new SpotValidator(),
     new QrCodeGenerator(),
+    new DownloadFilename(),
 );
 $request = Request::fromGlobals();
 

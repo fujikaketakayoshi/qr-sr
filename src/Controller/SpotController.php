@@ -17,6 +17,7 @@ use QrRally\Repository\SpotRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Session\Flash;
 use QrRally\Support\QrCodeGenerator;
+use QrRally\Support\DownloadFilename;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
 use QrRally\View\TemplateRenderer;
@@ -36,6 +37,7 @@ final class SpotController
         private readonly AuditLogRepository $logs,
         private readonly SpotValidator $validator,
         private readonly QrCodeGenerator $qrCodes,
+        private readonly DownloadFilename $filenames,
     ) {
     }
 
@@ -231,15 +233,16 @@ final class SpotController
         if ($spot === null) {
             return $this->notFound();
         }
-        $safeName = preg_replace('/[^a-zA-Z0-9_-]+/', '-', mb_convert_kana((string) $spot['name'], 'as'));
-        $filename = 'spot-' . trim((string) $safeName, '-') . '-qr.svg';
-        if ($filename === 'spot--qr.svg') {
-            $filename = 'spot-qr.svg';
-        }
+        $filename = $this->filenames->spotQrSvg(
+            (int) $spot['display_order'],
+            (string) $spot['name'],
+        );
+        $asciiFilename = sprintf('spot-%02d-qr.svg', (int) $spot['display_order']);
 
         return new Response($this->qrCodes->svg($this->publicUrl($spot)), 200, [
             'Content-Type' => 'image/svg+xml; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="' . $asciiFilename
+                . '"; filename*=UTF-8\'\'' . rawurlencode($filename),
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
