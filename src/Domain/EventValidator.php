@@ -10,7 +10,12 @@ use DateTimeZone;
 final class EventValidator
 {
     /** @return array<string, string> */
-    public function validate(EventInput $input, string $timezone, ?int $registeredSpotCount = null): array
+    public function validate(
+        EventInput $input,
+        string $timezone,
+        ?int $registeredSpotCount = null,
+        ?string $applicationDeadlineUtc = null,
+    ): array
     {
         $errors = [];
         if ($input->name === '' || mb_strlen($input->name) > 100) {
@@ -37,6 +42,15 @@ final class EventValidator
         }
         if ($startsAt !== null && $endsAt !== null && $startsAt >= $endsAt) {
             $errors['ends_at'] = '終了日時は開始日時より後にしてください。';
+        }
+        if ($endsAt !== null && $applicationDeadlineUtc !== null) {
+            $deadline = new DateTimeImmutable($applicationDeadlineUtc);
+            if ($endsAt->setTimezone(new DateTimeZone('UTC')) > $deadline) {
+                $displayDeadline = $deadline
+                    ->setTimezone(new DateTimeZone($timezone))
+                    ->format('Y年n月j日 H:i');
+                $errors['ends_at'] = "終了日時は、設定済みの応募締切（{$displayDeadline}）以前にしてください。先に応募設定で締切を変更することもできます。";
+            }
         }
         if ($input->requiredStampCount < 1 || $input->requiredStampCount > 20) {
             $errors['required_stamp_count'] = '達成数は1〜20で入力してください。';

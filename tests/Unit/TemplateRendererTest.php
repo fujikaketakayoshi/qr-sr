@@ -53,5 +53,7 @@ final class TemplateRendererTest extends TestCase
         self::assertStringContainsString('応募に使用する項目を1つ以上選択してください。', $html);
         self::assertStringContainsString('イベント終了日時', $html);
         self::assertStringContainsString('2026年8月13日 21:00', $html);
+        self::assertStringContainsString('締切を空欄にする', $html);
+        self::assertStringContainsString("document.getElementById('application_deadline_at').value = ''", $html);
     }
 }

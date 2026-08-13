@@ -53,6 +53,9 @@ textarea { resize: vertical; }
 .form-grid .wide { grid-column: 1 / -1; }
 .deadline-reference { align-self: start; display: grid; gap: .4rem; padding: .7rem 1rem; border-radius: .5rem; background: #f4f7f6; }
 .deadline-reference span { color: #63716d; font-size: .78rem; }
+.input-clear-row { display: flex; align-items: center; gap: .5rem; color: inherit; font-size: 1rem; font-weight: 400; }
+.input-clear-row input { min-width: 0; }
+.input-clear-row button { flex: 0 0 auto; white-space: nowrap; }
 fieldset { margin: 0 0 1rem; border: 1px solid #b8c5c1; border-radius: .6rem; padding: 1rem; }
 .checkbox { display: flex; align-items: center; }
 .checkbox input { width: auto; }
@@ -105,6 +108,7 @@ button:disabled { cursor: not-allowed; opacity: .35; }
     .admin-header, .admin-header nav { align-items: flex-start; flex-direction: column; }
     .form-grid, .summary { grid-template-columns: 1fr; }
     .form-grid .wide { grid-column: auto; }
+    .input-clear-row { align-items: stretch; flex-direction: column; }
     .spot-card, .qr-layout { grid-template-columns: 1fr; }
     .spot-order { flex-direction: row; }
     .stamp-grid { grid-template-columns: 1fr; }

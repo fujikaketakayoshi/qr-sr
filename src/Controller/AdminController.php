@@ -157,6 +157,9 @@ final class AdminController
             'errors' => $errors,
             'values' => $values,
             'eventExists' => $event !== null,
+            'applicationDeadlineNote' => $event !== null && $event['application_deadline_at'] !== null
+                ? '設定済みの応募締切：' . $this->displayDate((string) $event['application_deadline_at'])
+                : '応募締切はイベント終了日時と同じになります。',
         ], true, $status);
     }
 
@@ -180,12 +183,17 @@ final class AdminController
             filter_var($request->input('required_stamp_count'), FILTER_VALIDATE_INT) ?: 0,
             $request->input('completion_message'),
         );
-        $errors = $this->eventValidator->validate($input, $this->timezone, $this->spots->count());
+        $before = $this->events->find();
+        $errors = $this->eventValidator->validate(
+            $input,
+            $this->timezone,
+            $this->spots->count(),
+            $before === null ? null : $before['application_deadline_at'],
+        );
         if ($errors !== []) {
             return $this->eventForm($errors, $input, 422);
         }
 
-        $before = $this->events->find();
         $created = $this->events->save(
             $input,
             $this->eventValidator->toUtc($input->startsAt, $this->timezone),
