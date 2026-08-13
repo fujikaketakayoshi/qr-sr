@@ -13,6 +13,9 @@ use QrRally\Auth\RecoveryKey;
 use QrRally\Controller\AdminController;
 use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
+use QrRally\Controller\ApplicationController;
+use QrRally\Domain\ApplicationValidator;
+use QrRally\Repository\ApplicationRepository;
 use QrRally\Domain\EventValidator;
 use QrRally\Repository\AdminRepository;
 use QrRally\Repository\AuditLogRepository;
@@ -29,6 +32,7 @@ use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
 use QrRally\Support\QrCodeGenerator;
 use QrRally\Support\DownloadFilename;
+use QrRally\Support\CsvValue;
 use QrRally\Domain\SpotValidator;
 use QrRally\View\TemplateRenderer;
 
@@ -88,6 +92,7 @@ $controller = new AdminController(
     ),
     new EventRepository($database),
     $spotRepository,
+    new ApplicationRepository($database),
     new EventValidator(),
     $logs,
     $config->string('timezone'),
@@ -121,8 +126,14 @@ $participantController = new ParticipantController(
     $config->bool('cookie_secure'),
     (string) (parse_url($config->string('base_url'), PHP_URL_PATH) ?: '/'),
 );
+$applicationController = new ApplicationController(
+    $templates, new ViewData($urls, $csrf, $flash), $urls, $csrf, $flash, $auth,
+    new EventRepository($database), new ParticipantRepository($database, $participantToken),
+    new ApplicationRepository($database), new ApplicationValidator(), $participantToken, $logs, new CsvValue(),
+    $config->string('timezone'),
+);
 $request = Request::fromGlobals();
 
-(new Application($controller, $spotController, $participantController, $templates, $config->string('base_url')))
+(new Application($controller, $spotController, $participantController, $applicationController, $templates, $config->string('base_url')))
     ->handle($request)
     ->send();

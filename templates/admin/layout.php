@@ -13,6 +13,8 @@
         <a href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">概要</a>
         <a href="<?= htmlspecialchars($url('admin/event'), ENT_QUOTES, 'UTF-8') ?>">イベント設定</a>
         <a href="<?= htmlspecialchars($url('admin/spots'), ENT_QUOTES, 'UTF-8') ?>">スポット</a>
+        <a href="<?= htmlspecialchars($url('admin/applications'), ENT_QUOTES, 'UTF-8') ?>">参加・応募</a>
+        <a href="<?= htmlspecialchars($url('admin/applications/settings'), ENT_QUOTES, 'UTF-8') ?>">応募設定</a>
         <a href="<?= htmlspecialchars($url('admin/logs'), ENT_QUOTES, 'UTF-8') ?>">操作ログ</a>
         <form method="post" action="<?= htmlspecialchars($url('admin/logout'), ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

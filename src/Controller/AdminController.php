@@ -16,6 +16,7 @@ use QrRally\Http\Response;
 use QrRally\Repository\AuditLogRepository;
 use QrRally\Repository\EventRepository;
 use QrRally\Repository\SpotRepository;
+use QrRally\Repository\ApplicationRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Session\Flash;
 use QrRally\Support\UrlGenerator;
@@ -34,6 +35,7 @@ final class AdminController
         private readonly PasswordResetter $passwordResetter,
         private readonly EventRepository $events,
         private readonly SpotRepository $spots,
+        private readonly ApplicationRepository $applications,
         private readonly EventValidator $eventValidator,
         private readonly AuditLogRepository $logs,
         private readonly string $timezone,
@@ -135,6 +137,7 @@ final class AdminController
             'status' => $event === null ? null : $this->eventStatus($event),
             'displayStartsAt' => $event === null ? null : $this->displayDate((string) $event['starts_at']),
             'displayEndsAt' => $event === null ? null : $this->displayDate((string) $event['ends_at']),
+            'summary' => $this->applications->summary(),
         ]);
     }
 

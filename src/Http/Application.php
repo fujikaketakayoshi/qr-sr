@@ -7,6 +7,7 @@ namespace QrRally\Http;
 use QrRally\Controller\AdminController;
 use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
+use QrRally\Controller\ApplicationController;
 use QrRally\View\TemplateRenderer;
 
 final class Application
@@ -15,6 +16,7 @@ final class Application
         private readonly AdminController $admin,
         private readonly SpotController $spots,
         private readonly ParticipantController $participants,
+        private readonly ApplicationController $applications,
         private readonly TemplateRenderer $templates,
         private readonly string $baseUrl,
     ) {
@@ -28,6 +30,10 @@ final class Application
             'GET /' => $this->participants->home($request),
             'POST /join' => $this->participants->join($request),
             'GET /notices' => $this->participants->notices(),
+            'GET /application' => $this->applications->form($request),
+            'POST /application/confirm' => $this->applications->confirm($request),
+            'POST /application/submit' => $this->applications->submit($request),
+            'GET /application/complete' => $this->applications->complete($request),
             'GET /admin/login' => $this->admin->loginForm(),
             'POST /admin/login' => $this->admin->login($request),
             'POST /admin/logout' => $this->admin->logout($request),
@@ -36,6 +42,10 @@ final class Application
             'GET /admin', 'GET /admin/' => $this->admin->dashboard(),
             'GET /admin/event' => $this->admin->eventForm(),
             'POST /admin/event' => $this->admin->saveEvent($request),
+            'GET /admin/applications/settings' => $this->applications->settings(),
+            'POST /admin/applications/settings' => $this->applications->saveSettings($request),
+            'GET /admin/applications' => $this->applications->report(),
+            'GET /admin/applications.csv' => $this->applications->csv(),
             'GET /admin/logs' => $this->admin->logs(),
             'GET /admin/spots' => $this->spots->index(),
             'GET /admin/spots/create' => $this->spots->createForm(),

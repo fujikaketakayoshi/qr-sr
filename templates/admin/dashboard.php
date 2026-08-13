@@ -8,4 +8,5 @@
         <p><?= nl2br(htmlspecialchars($event['description'], ENT_QUOTES, 'UTF-8')) ?></p>
         <dl class="summary"><div><dt>開始</dt><dd><?= htmlspecialchars($displayStartsAt, ENT_QUOTES, 'UTF-8') ?></dd></div><div><dt>終了</dt><dd><?= htmlspecialchars($displayEndsAt, ENT_QUOTES, 'UTF-8') ?></dd></div><div><dt>達成条件</dt><dd><?= (int) $event['required_stamp_count'] ?>個</dd></div></dl>
     </section>
+    <dl class="summary summary-four"><div><dt>参加者</dt><dd><?= $summary['participants'] ?>人</dd></div><div><dt>取得</dt><dd><?= $summary['acquisitions'] ?>件</dd></div><div><dt>達成者</dt><dd><?= $summary['completed'] ?>人</dd></div><div><dt>応募者</dt><dd><?= $summary['applications'] ?>人</dd></div></dl>
 <?php endif; ?>
