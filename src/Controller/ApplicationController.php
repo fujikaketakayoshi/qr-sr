@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use QrRally\Auth\AdminAuth;
 use QrRally\Domain\ApplicationInput;
+use QrRally\Domain\ApplicationDefaults;
 use QrRally\Domain\ApplicationValidator;
 use QrRally\Http\Request;
 use QrRally\Http\Response;
@@ -51,7 +52,8 @@ final class ApplicationController
         $event = $this->events->find();
         $fields = $this->applications->fields();
         $timezone = $this->timezone;
-        return $this->adminView('admin/applications/settings.php', compact('event', 'fields', 'errors', 'submitted', 'timezone'), $status);
+        $defaultPurpose = ApplicationDefaults::PRIVACY_PURPOSE;
+        return $this->adminView('admin/applications/settings.php', compact('event', 'fields', 'errors', 'submitted', 'timezone', 'defaultPurpose'), '応募設定', $status);
     }
 
     public function saveSettings(Request $request): Response
@@ -107,7 +109,11 @@ final class ApplicationController
         if (!$this->csrf->verify($request->input('_csrf'))) return new Response($this->templates->render('errors/419.php'), 419);
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
-        if (!$this->canApply($event, $participant)) return $this->participantView('participant/application-unavailable.php', compact('event', 'participant'), 403);
+        if (!$this->canApply($event, $participant)) {
+            $existing = $this->applications->findForParticipant((int) $participant['id']);
+            $fields = $this->applications->fields();
+            return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields'), 403);
+        }
         $input = $this->applicationInput($request);
         $fields = $this->applications->fields();
         $existing = $this->applications->findForParticipant((int) $participant['id']);
@@ -146,7 +152,7 @@ final class ApplicationController
     public function report(): Response
     {
         if (($response = $this->requireAdmin()) !== null) return $response;
-        return $this->adminView('admin/applications/report.php', ['summary' => $this->applications->summary(), 'spots' => $this->applications->spotSummary()]);
+        return $this->adminView('admin/applications/report.php', ['summary' => $this->applications->summary(), 'spots' => $this->applications->spotSummary()], '参加・応募集計');
     }
 
     public function csv(): Response
@@ -175,6 +181,6 @@ final class ApplicationController
     private function participantContext(Request $request): array { $event=$this->events->find(); $token=$request->cookie(self::COOKIE_NAME); $participant=$token===null?null:$this->participants->findByToken($token); if($event===null||$participant===null)return [$event??[],$participant??[],Response::redirect($this->urls->to(''))]; return [$event,$participant,null]; }
     private function requireAdmin(): ?Response { return $this->auth->id()===null?Response::redirect($this->urls->to('admin/login'),302):null; }
     private function guardAdminPost(Request $request): ?Response { if(($r=$this->requireAdmin())!==null)return $r; return !$this->csrf->verify($request->input('_csrf'))?new Response($this->templates->render('errors/419.php'),419):null; }
-    private function adminView(string $template,array $data,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data)),$status);}
+    private function adminView(string $template,array $data,string $title,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data,['title'=>$title])),$status);}
     private function participantView(string $template,array $data,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data),'participant/layout.php'),$status,['Content-Type'=>'text/html; charset=UTF-8','Cache-Control'=>'private, no-store']);}
 }

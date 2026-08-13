@@ -27,7 +27,7 @@ CREATE TABLE events (
     completion_message TEXT NOT NULL DEFAULT '',
     application_enabled INTEGER NOT NULL DEFAULT 0 CHECK (application_enabled IN (0, 1)),
     application_deadline_at TEXT,
-    privacy_purpose_text TEXT NOT NULL DEFAULT '',
+    privacy_purpose_text TEXT NOT NULL DEFAULT '抽選と当選者への連絡のために使用します。',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     CHECK (starts_at < ends_at)

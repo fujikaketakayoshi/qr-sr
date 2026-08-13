@@ -8,6 +8,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use QrRally\Database\ConnectionFactory;
 use QrRally\Database\Migrator;
+use QrRally\Domain\ApplicationDefaults;
 use QrRally\Domain\EventInput;
 use QrRally\Repository\EventRepository;
 
@@ -39,6 +40,7 @@ final class EventRepositoryTest extends TestCase
         $input = new EventInput('最初のイベント', '', '', '', '', false, '', 3, '');
 
         self::assertTrue($events->save($input, '2026-08-11T01:00:00Z', '2026-08-11T09:00:00Z'));
+        self::assertSame(ApplicationDefaults::PRIVACY_PURPOSE, $events->find()['privacy_purpose_text']);
         self::assertFalse($events->save(
             new EventInput('更新イベント', '', '', '', '', true, '一時停止中', 5, ''),
             '2026-08-12T01:00:00Z',

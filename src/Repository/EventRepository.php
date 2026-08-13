@@ -6,6 +6,7 @@ namespace QrRally\Repository;
 
 use PDO;
 use QrRally\Domain\EventInput;
+use QrRally\Domain\ApplicationDefaults;
 
 final class EventRepository
 {
@@ -29,7 +30,7 @@ final class EventRepository
             . '(id, name, description, notice_text, starts_at, ends_at, is_paused, pause_message, '
             . 'required_stamp_count, completion_message, application_enabled, privacy_purpose_text, created_at, updated_at) '
             . "VALUES (1, :name, :description, :notice_text, :starts_at, :ends_at, :is_paused, :pause_message, "
-            . ":required_stamp_count, :completion_message, 0, '', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) "
+            . ":required_stamp_count, :completion_message, 0, :privacy_purpose_text, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) "
             . 'ON CONFLICT(id) DO UPDATE SET '
             . 'name = excluded.name, description = excluded.description, notice_text = excluded.notice_text, '
             . 'starts_at = excluded.starts_at, ends_at = excluded.ends_at, is_paused = excluded.is_paused, '
@@ -46,6 +47,7 @@ final class EventRepository
             'pause_message' => $input->pauseMessage,
             'required_stamp_count' => $input->requiredStampCount,
             'completion_message' => $input->completionMessage,
+            'privacy_purpose_text' => ApplicationDefaults::PRIVACY_PURPOSE,
         ]);
 
         return !$exists;

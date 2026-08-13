@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | 管理画面</title>
+    <title><?= htmlspecialchars((string) ($title ?? '管理画面'), ENT_QUOTES, 'UTF-8') ?> | 管理画面</title>
     <link rel="stylesheet" href="<?= htmlspecialchars($url('assets/app.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
