@@ -46,6 +46,7 @@ final class Application
             'POST /admin/applications/settings' => $this->applications->saveSettings($request),
             'GET /admin/applications' => $this->applications->report(),
             'GET /admin/applications.csv' => $this->applications->csv(),
+            'GET /admin/applications/applicants.csv' => $this->applications->applicationsCsv(),
             'GET /admin/logs' => $this->admin->logs(),
             'GET /admin/spots' => $this->spots->index(),
             'GET /admin/spots/create' => $this->spots->createForm(),

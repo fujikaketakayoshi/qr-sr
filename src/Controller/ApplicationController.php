@@ -162,15 +162,17 @@ final class ApplicationController
         $columns = ['nickname' => 'ニックネーム', 'stamp_count' => '取得数', 'first_seen_at' => '参加日時', 'last_seen_at' => '最終アクセス日時', 'completed_at' => '達成日時', 'application_number' => '応募番号'];
         foreach ($fields as $field) $columns[(string) $field['field_type']] = $this->validator->label((string) $field['field_type']);
         $columns += ['submitted_at' => '応募日時', 'updated_at' => '応募更新日時'];
-        $stream = fopen('php://temp', 'r+'); fwrite($stream, "\xEF\xBB\xBF"); fputcsv($stream, array_values($columns));
-        foreach ($this->applications->exportRows() as $row) {
-            $line = [];
-            foreach (array_keys($columns) as $key) $line[] = $this->csvValues->safe((string) ($row[$key] ?? ''));
-            fputcsv($stream, $line);
-        }
-        rewind($stream); $body = stream_get_contents($stream); fclose($stream);
-        $this->logs->record('participants.csv_exported', 'admin', $this->auth->id(), 'success');
-        return new Response((string) $body, 200, ['Content-Type' => 'text/csv; charset=UTF-8', 'Content-Disposition' => 'attachment; filename="qr-rally-participants.csv"', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+        return $this->csvResponse($columns, $this->applications->exportRows(), 'participants_csv_exported', 'qr-rally-participants.csv');
+    }
+
+    public function applicationsCsv(): Response
+    {
+        if (($response = $this->requireAdmin()) !== null) return $response;
+        $fields = array_filter($this->applications->fields(), fn ($field) => (bool) $field['is_enabled']);
+        $columns = ['application_number' => '応募番号', 'nickname' => 'ニックネーム', 'stamp_count' => '取得数', 'completed_at' => '達成日時'];
+        foreach ($fields as $field) $columns[(string) $field['field_type']] = $this->validator->label((string) $field['field_type']);
+        $columns += ['submitted_at' => '応募日時', 'updated_at' => '応募更新日時'];
+        return $this->csvResponse($columns, $this->applications->exportApplicationRows(), 'applications_csv_exported', 'qr-rally-applications.csv');
     }
 
     private function applicationInput(Request $request): ApplicationInput { return new ApplicationInput(['name'=>$request->input('name'),'email'=>$request->input('email'),'email_confirmation'=>$request->input('email_confirmation'),'address'=>$request->input('address'),'phone'=>$request->input('phone')], $request->boolean('privacy_accepted')); }
@@ -181,6 +183,8 @@ final class ApplicationController
     private function participantContext(Request $request): array { $event=$this->events->find(); $token=$request->cookie(self::COOKIE_NAME); $participant=$token===null?null:$this->participants->findByToken($token); if($event===null||$participant===null)return [$event??[],$participant??[],Response::redirect($this->urls->to(''))]; return [$event,$participant,null]; }
     private function requireAdmin(): ?Response { return $this->auth->id()===null?Response::redirect($this->urls->to('admin/login'),302):null; }
     private function guardAdminPost(Request $request): ?Response { if(($r=$this->requireAdmin())!==null)return $r; return !$this->csrf->verify($request->input('_csrf'))?new Response($this->templates->render('errors/419.php'),419):null; }
+    /** @param array<string,string> $columns @param list<array<string,mixed>> $rows */
+    private function csvResponse(array $columns,array $rows,string $logEvent,string $filename):Response{ $stream=fopen('php://temp','r+'); fwrite($stream,"\xEF\xBB\xBF"); fputcsv($stream,array_map(fn($value)=>$this->csvValues->safe($value),array_values($columns))); foreach($rows as $row){$line=[];foreach(array_keys($columns) as $key)$line[]=$this->csvValues->safe((string)($row[$key]??''));fputcsv($stream,$line);} rewind($stream);$body=stream_get_contents($stream);fclose($stream);$this->logs->record($logEvent,'admin',$this->auth->id(),'success');return new Response((string)$body,200,['Content-Type'=>'text/csv; charset=UTF-8','Content-Disposition'=>'attachment; filename="'.$filename.'"','Cache-Control'=>'private, no-store','X-Content-Type-Options'=>'nosniff']); }
     private function adminView(string $template,array $data,string $title,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data,['title'=>$title])),$status);}
     private function participantView(string $template,array $data,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data),'participant/layout.php'),$status,['Content-Type'=>'text/html; charset=UTF-8','Cache-Control'=>'private, no-store']);}
 }

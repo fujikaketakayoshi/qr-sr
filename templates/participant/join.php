@@ -15,6 +15,7 @@
         </aside>
 
         <h2>はじめて参加する</h2>
+        <?php require dirname(__DIR__) . '/form-error-summary.php'; ?>
         <form method="post" action="<?= htmlspecialchars($url('join'), ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="spot_token" value="<?= htmlspecialchars($spotToken, ENT_QUOTES, 'UTF-8') ?>">

@@ -32,6 +32,7 @@ textarea { resize: vertical; }
 .admin-main { width: min(calc(100% - 2rem), 70rem); margin: 2rem auto; }
 .page-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
 .page-heading h1 { margin: 0; }
+.export-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 .panel { padding: 1.5rem; background: #fff; border-radius: .8rem; box-shadow: 0 .3rem 1rem rgb(15 23 42 / 6%); }
 .empty-state { text-align: center; }
 .flash { padding: .8rem 1rem; border-radius: .5rem; }

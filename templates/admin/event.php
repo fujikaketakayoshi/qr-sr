@@ -1,5 +1,5 @@
 <div class="page-heading"><div><p class="eyebrow">EVENT</p><h1>イベント設定</h1></div></div>
-<?php if ($errors !== []): ?><p class="error">入力内容を確認してください。</p><?php endif; ?>
+<?php require dirname(__DIR__) . '/form-error-summary.php'; ?>
 <form class="panel form-grid" method="post" action="<?= htmlspecialchars($url('admin/event'), ENT_QUOTES, 'UTF-8') ?>">
     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
     <label class="wide">イベント名<span>必須・100文字以内</span><input name="name" maxlength="100" required value="<?= htmlspecialchars((string) $values['name'], ENT_QUOTES, 'UTF-8') ?>"><?php if (isset($errors['name'])): ?><small class="field-error"><?= htmlspecialchars($errors['name'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></label>

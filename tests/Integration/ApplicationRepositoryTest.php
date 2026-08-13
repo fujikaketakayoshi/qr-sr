@@ -40,4 +40,23 @@ final class ApplicationRepositoryTest extends TestCase
         self::assertNull($second['email']);
         self::assertSame(1,(int)$this->applications->summary()['applications']);
     }
+
+    public function testApplicationExportContainsOnlyApplicants(): void
+    {
+        self::assertSame([], $this->applications->exportApplicationRows());
+
+        $this->database->exec("INSERT INTO participants(token_hash,nickname,first_seen_at,last_seen_at,created_at,updated_at) VALUES('other-hash','not-applied','now','now','now','now')");
+        $this->applications->saveSettings(true, null, '抽選連絡のため', [
+            'name' => ['enabled' => true, 'required' => true],
+            'email' => ['enabled' => false, 'required' => false],
+            'address' => ['enabled' => false, 'required' => false],
+            'phone' => ['enabled' => false, 'required' => false],
+        ]);
+        $this->applications->save(1, new ApplicationInput(['name'=>'応募者','email'=>'','address'=>'','phone'=>''], true), $this->applications->fields());
+
+        $rows = $this->applications->exportApplicationRows();
+        self::assertCount(1, $rows);
+        self::assertSame('nick', $rows[0]['nickname']);
+        self::assertSame('応募者', $rows[0]['name']);
+    }
 }

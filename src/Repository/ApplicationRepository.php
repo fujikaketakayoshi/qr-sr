@@ -87,4 +87,10 @@ final class ApplicationRepository
     {
         return $this->database->query('SELECT p.nickname,p.first_seen_at,p.last_seen_at,p.completed_at,COUNT(sa.id) stamp_count,a.application_number,a.name,a.email,a.address,a.phone,a.submitted_at,a.updated_at FROM participants p LEFT JOIN stamp_acquisitions sa ON sa.participant_id=p.id LEFT JOIN applications a ON a.participant_id=p.id GROUP BY p.id ORDER BY p.id')->fetchAll();
     }
+
+    /** @return list<array<string, mixed>> */
+    public function exportApplicationRows(): array
+    {
+        return $this->database->query('SELECT a.application_number,p.nickname,COUNT(sa.id) stamp_count,p.completed_at,a.name,a.email,a.address,a.phone,a.submitted_at,a.updated_at FROM applications a INNER JOIN participants p ON p.id=a.participant_id LEFT JOIN stamp_acquisitions sa ON sa.participant_id=p.id GROUP BY a.id ORDER BY a.id')->fetchAll();
+    }
 }
