@@ -36,6 +36,8 @@ textarea { resize: vertical; }
 .empty-state { text-align: center; }
 .flash { padding: .8rem 1rem; border-radius: .5rem; }
 .flash-success { color: #075c42; background: #dff6ed; }
+.flash-error { color: #a61b1b; background: #fff1f1; border: 1px solid #f1b4b4; }
+.flash-error span { display: block; margin-top: .25rem; }
 .status-badge { display: inline-block; padding: .3rem .65rem; border-radius: 99rem; font-size: .8rem; font-weight: 800; }
 .status-active { color: #075c42; background: #dff6ed; }
 .status-upcoming { color: #744c00; background: #fff3cc; }
@@ -48,6 +50,8 @@ textarea { resize: vertical; }
 .summary dd { margin: .35rem 0 0; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.25rem; }
 .form-grid .wide { grid-column: 1 / -1; }
+.deadline-reference { align-self: start; display: grid; gap: .4rem; padding: .7rem 1rem; border-radius: .5rem; background: #f4f7f6; }
+.deadline-reference span { color: #63716d; font-size: .78rem; }
 fieldset { margin: 0 0 1rem; border: 1px solid #b8c5c1; border-radius: .6rem; padding: 1rem; }
 .checkbox { display: flex; align-items: center; }
 .checkbox input { width: auto; }
