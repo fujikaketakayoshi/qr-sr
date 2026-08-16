@@ -1,0 +1,38 @@
+@font-face { font-family: "Noto Sans JP"; font-style: normal; font-weight: 400; src: url("fonts/NotoSansJP-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Noto Sans JP"; font-style: normal; font-weight: 700; src: url("fonts/NotoSansJP-Bold.ttf") format("truetype"); }
+:root { color: #15201d; font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef3f1; }
+.print-toolbar { position: sticky; z-index: 10; top: 0; display: flex; justify-content: center; gap: 1rem; padding: .8rem; background: #15201d; }
+.print-toolbar button, .print-toolbar a { border: 0; border-radius: .5rem; padding: .7rem 1rem; color: #fff; background: #087f5b; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+.print-toolbar a { color: #15201d; background: #fff; }
+.print-page { width: 210mm; min-height: 297mm; margin: 1rem auto; padding: 16mm; overflow: hidden; background: #fff; box-shadow: 0 .5rem 2rem rgb(15 23 42 / 12%); text-align: center; break-after: page; }
+.print-page:last-child { break-after: auto; }
+.kicker, .spot-number { margin: 0; color: #087f5b; font-weight: 700; letter-spacing: .12em; }
+.print-page h1 { margin: .4rem auto 1rem; overflow-wrap: anywhere; font-size: 2.4rem; line-height: 1.35; }
+.entrance-page { overflow: visible; }
+.entrance-page h1 { font-size: 2rem; }
+.print-page h2 { font-size: 1.35rem; }
+.event-description, .spot-description, .full-notice { line-height: 1.7; text-align: left; }
+.entrance-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 1rem; text-align: left; }
+.entrance-grid ol { padding-left: 1.5rem; line-height: 2; }
+.qr-code { display: block; width: min(100%, 122mm); margin: 0 auto; }
+.spot-qr { width: 122mm; }
+.event-name { margin: 0 0 .5rem; color: #52615d; }
+.scan-lead { margin: .5rem 0 1rem; font-size: 1.35rem; font-weight: 700; }
+.browser-notice { margin-top: 1rem; padding: 1rem 1.2rem; color: #612b13; background: #fff4e5; border: 2px solid #e87817; border-radius: .7rem; line-height: 1.6; text-align: left; }
+.browser-notice p { margin: .45rem 0; }
+.browser-notice.compact { margin-right: auto; margin-left: auto; max-width: 170mm; }
+.print-url { margin-top: 1rem; color: #66736f; overflow-wrap: anywhere; font-size: .75rem; }
+.screen-message { width: min(90%, 42rem); margin: 4rem auto; padding: 2rem; background: #fff; border-radius: .8rem; }
+@page { size: A4 portrait; margin: 0; }
+@media print {
+    body { background: #fff; }
+    .print-toolbar { display: none; }
+    .print-page { margin: 0; box-shadow: none; }
+    .entrance-page { min-height: 297mm; height: auto; }
+}
+@media screen and (max-width: 52rem) {
+    .print-page { width: 100%; min-height: auto; margin: 0; padding: 1.25rem; }
+    .entrance-grid { grid-template-columns: 1fr; }
+}

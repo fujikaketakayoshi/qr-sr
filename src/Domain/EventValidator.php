@@ -18,8 +18,8 @@ final class EventValidator
     ): array
     {
         $errors = [];
-        if ($input->name === '' || mb_strlen($input->name) > 100) {
-            $errors['name'] = 'イベント名は1〜100文字で入力してください。';
+        if ($input->name === '' || mb_strlen($input->name) > 50) {
+            $errors['name'] = 'イベント名は1〜50文字で入力してください。';
         }
         foreach ([
             'description' => [$input->description, 2000, '説明'],

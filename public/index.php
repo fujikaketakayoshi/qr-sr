@@ -14,6 +14,7 @@ use QrRally\Controller\AdminController;
 use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
 use QrRally\Controller\ApplicationController;
+use QrRally\Controller\PrintController;
 use QrRally\Domain\ApplicationValidator;
 use QrRally\Repository\ApplicationRepository;
 use QrRally\Domain\EventValidator;
@@ -33,6 +34,7 @@ use QrRally\Support\ViewData;
 use QrRally\Support\QrCodeGenerator;
 use QrRally\Support\DownloadFilename;
 use QrRally\Support\CsvValue;
+use QrRally\Support\PrintPdfGenerator;
 use QrRally\Domain\SpotValidator;
 use QrRally\View\TemplateRenderer;
 
@@ -132,8 +134,21 @@ $applicationController = new ApplicationController(
     new ApplicationRepository($database), new ApplicationValidator(), $participantToken, $logs, new CsvValue(),
     $config->string('timezone'),
 );
+$printController = new PrintController(
+    $templates,
+    new ViewData($urls, $csrf, $flash),
+    $urls,
+    $auth,
+    new EventRepository($database),
+    $spotRepository,
+    $logs,
+    new QrCodeGenerator(),
+    new PrintPdfGenerator(dirname(__DIR__)),
+    dirname(__DIR__) . '/public/assets/fonts',
+    $config->string('timezone'),
+);
 $request = Request::fromGlobals();
 
-(new Application($controller, $spotController, $participantController, $applicationController, $templates, $config->string('base_url')))
+(new Application($controller, $spotController, $participantController, $applicationController, $printController, $templates, $config->string('base_url')))
     ->handle($request)
     ->send();

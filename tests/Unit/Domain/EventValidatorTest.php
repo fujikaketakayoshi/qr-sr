@@ -69,4 +69,14 @@ final class EventValidatorTest extends TestCase
 
         self::assertSame([], (new EventValidator())->validate($input, 'Asia/Tokyo', null, null));
     }
+
+    public function testAcceptsFiftyCharacterNameAndRejectsFiftyOneCharacters(): void
+    {
+        $validator = new EventValidator();
+        $valid = new EventInput(str_repeat('あ', 50), '', '', '2026-08-11T10:00', '2026-08-11T18:00', false, '', 1, '');
+        $invalid = new EventInput(str_repeat('あ', 51), '', '', '2026-08-11T10:00', '2026-08-11T18:00', false, '', 1, '');
+
+        self::assertArrayNotHasKey('name', $validator->validate($valid, 'Asia/Tokyo'));
+        self::assertSame('イベント名は1〜50文字で入力してください。', $validator->validate($invalid, 'Asia/Tokyo')['name']);
+    }
 }

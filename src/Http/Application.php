@@ -8,6 +8,7 @@ use QrRally\Controller\AdminController;
 use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
 use QrRally\Controller\ApplicationController;
+use QrRally\Controller\PrintController;
 use QrRally\View\TemplateRenderer;
 
 final class Application
@@ -17,6 +18,7 @@ final class Application
         private readonly SpotController $spots,
         private readonly ParticipantController $participants,
         private readonly ApplicationController $applications,
+        private readonly PrintController $prints,
         private readonly TemplateRenderer $templates,
         private readonly string $baseUrl,
     ) {
@@ -51,6 +53,9 @@ final class Application
             'GET /admin/spots' => $this->spots->index(),
             'GET /admin/spots/create' => $this->spots->createForm(),
             'POST /admin/spots' => $this->spots->create($request),
+            'GET /admin/print/entrance' => $this->prints->entrance(),
+            'GET /admin/print/spots' => $this->prints->spots(),
+            'GET /admin/print/spots.pdf' => $this->prints->spotsPdf(),
             default => null,
         };
         if ($static !== null) {
@@ -58,7 +63,7 @@ final class Application
         }
 
         $path = $request->path($this->baseUrl);
-        if (preg_match('#^/admin/spots/([0-9a-f-]{36})/(edit|toggle|move|delete|reissue|qr|qr\.svg)$#D', $path, $matches)) {
+        if (preg_match('#^/admin/spots/([0-9a-f-]{36})/(edit|toggle|move|delete|reissue|qr|qr\.svg|print)$#D', $path, $matches)) {
             $id = $this->spots->resolveManagementId($matches[1]);
             if ($id === null) {
                 return new Response($this->templates->render('errors/404.php'), 404);
@@ -72,6 +77,7 @@ final class Application
                 'POST reissue' => $this->spots->reissue($request, $id),
                 'GET qr' => $this->spots->qr($id),
                 'GET qr.svg' => $this->spots->downloadQr($id),
+                'GET print' => $this->prints->spot($id),
                 default => new Response($this->templates->render('errors/404.php'), 404),
             };
         }
