@@ -15,6 +15,8 @@ use QrRally\Repository\ParticipantRepository;
 use QrRally\Repository\SpotRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Security\ParticipantToken;
+use QrRally\Security\ParticipantCookie;
+use QrRally\Security\TrafficMonitor;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
 use QrRally\View\TemplateRenderer;
@@ -34,8 +36,8 @@ final class ParticipantController
         private readonly ParticipantToken $tokens,
         private readonly AuditLogRepository $logs,
         private readonly string $appKey,
-        private readonly bool $cookieSecure,
-        private readonly string $cookiePath,
+        private readonly ParticipantCookie $participantCookie,
+        private readonly TrafficMonitor $traffic,
     ) {
     }
 
@@ -71,7 +73,7 @@ final class ParticipantController
     public function join(Request $request): Response
     {
         if (!$this->csrf->verify($request->input('_csrf'))) {
-            return new Response($this->templates->render('errors/419.php'), 419);
+            return $this->csrfFailure();
         }
         $nickname = $request->input('nickname');
         $spotToken = $request->input('spot_token');
@@ -101,7 +103,7 @@ final class ParticipantController
 
         return new Response('', 303, [
             'Location' => $this->urls->to($destination),
-            'Set-Cookie' => $this->cookieHeader($token),
+            'Set-Cookie' => $this->participantCookie->header($token),
             'Cache-Control' => 'no-store',
         ]);
     }
@@ -115,6 +117,16 @@ final class ParticipantController
         $participant = $this->currentParticipant($request);
         if ($participant === null) {
             return $this->joinForm($token);
+        }
+        $warning = $this->traffic->recordSpotAccess((int) $participant['id'], (int) $spot['id'], $request->clientIp());
+        if ($warning !== null) {
+            $this->logs->record(
+                'participant.rapid_spot_access',
+                'participant',
+                (int) $participant['id'],
+                'warning',
+                $warning,
+            );
         }
         $event = $this->events->find();
         if ($event === null) {
@@ -188,9 +200,9 @@ final class ParticipantController
         return EventStatus::calculate((bool) $event['is_paused'], new DateTimeImmutable((string) $event['starts_at']), new DateTimeImmutable((string) $event['ends_at']), new DateTimeImmutable('now', new DateTimeZone('UTC')));
     }
 
-    private function cookieHeader(string $token): string
+    private function csrfFailure(): Response
     {
-        return self::COOKIE_NAME . '=' . $token . '; Path=' . $this->cookiePath . '; Max-Age=31536000; HttpOnly; SameSite=Lax' . ($this->cookieSecure ? '; Secure' : '');
+        return $this->view('errors/participant-419.php', ['event' => $this->events->find()], 419);
     }
 
     /** @param array<string, mixed> $data */

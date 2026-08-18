@@ -85,4 +85,25 @@ final class AuthVersionTest extends TestCase
         self::assertSame('保持するイベント', $this->database->query('SELECT name FROM events')->fetchColumn());
         self::assertSame(1, (int) $this->database->query('SELECT COUNT(*) FROM audit_logs WHERE event_type = \'admin_credentials_reset_via_cli\'')->fetchColumn());
     }
+
+    public function testSessionExpiresAfterConfiguredInactivity(): void
+    {
+        $adminId = $this->admins->create(
+            'admin@example.test',
+            password_hash('original-password', PASSWORD_DEFAULT),
+            password_hash('original-recovery-key', PASSWORD_DEFAULT),
+        );
+        $_SESSION = ['admin_id' => $adminId, 'last_activity_at' => time() - 7201, 'auth_version' => 1];
+        $auth = new AdminAuth(
+            $this->admins,
+            new LoginAttemptRepository($this->database),
+            $this->logs,
+            new SessionManager(),
+            new CsrfToken(),
+            str_repeat('a', 64),
+            7200,
+        );
+
+        self::assertNull($auth->id());
+    }
 }

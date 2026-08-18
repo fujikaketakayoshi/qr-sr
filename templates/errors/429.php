@@ -1,0 +1,1 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>アクセスが集中しています</title></head><body><main><h1>アクセスが集中しています</h1><p>少し時間をおいて再度お試しください。</p></main></body></html>

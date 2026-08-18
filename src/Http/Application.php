@@ -9,6 +9,8 @@ use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
 use QrRally\Controller\ApplicationController;
 use QrRally\Controller\PrintController;
+use QrRally\Exception\DatabaseBusyException;
+use QrRally\Security\TrafficMonitor;
 use QrRally\View\TemplateRenderer;
 
 final class Application
@@ -21,12 +23,36 @@ final class Application
         private readonly PrintController $prints,
         private readonly TemplateRenderer $templates,
         private readonly string $baseUrl,
+        private readonly TrafficMonitor $traffic,
     ) {
     }
 
     public function handle(Request $request): Response
     {
-        $route = $request->method() . ' ' . $request->path($this->baseUrl);
+        $path = $request->path($this->baseUrl);
+        $isAdminPath = $path === '/admin' || str_starts_with($path, '/admin/');
+        if (!$isAdminPath && !$this->traffic->allowRequest($request->clientIp())) {
+            return new Response($this->templates->render('errors/429.php'), 429, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'Cache-Control' => 'no-store',
+                'Retry-After' => '60',
+            ]);
+        }
+
+        try {
+            return $this->dispatch($request, $path);
+        } catch (DatabaseBusyException) {
+            return new Response($this->templates->render('errors/503.php'), 503, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'Cache-Control' => 'no-store',
+                'Retry-After' => '1',
+            ]);
+        }
+    }
+
+    private function dispatch(Request $request, string $path): Response
+    {
+        $route = $request->method() . ' ' . $path;
 
         $static = match ($route) {
             'GET /' => $this->participants->home($request),
@@ -62,7 +88,6 @@ final class Application
             return $static;
         }
 
-        $path = $request->path($this->baseUrl);
         if (preg_match('#^/admin/spots/([0-9a-f-]{36})/(edit|toggle|move|delete|reissue|qr|qr\.svg|print)$#D', $path, $matches)) {
             $id = $this->spots->resolveManagementId($matches[1]);
             if ($id === null) {

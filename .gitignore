@@ -5,6 +5,7 @@ project-docs/
 /storage/*.sqlite-*
 /storage/logs/*.log
 /storage/fonts/
+/storage/runtime/
 /storage/cookie-probe-state.json
 /.phpunit.cache/
 /output/

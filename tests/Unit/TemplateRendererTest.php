@@ -56,4 +56,18 @@ final class TemplateRendererTest extends TestCase
         self::assertStringContainsString('締切を空欄にする', $html);
         self::assertStringContainsString("document.getElementById('application_deadline_at').value = ''", $html);
     }
+
+    public function testParticipantCsrfFailureLinksBackToEventEntry(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->renderWithLayout('errors/participant-419.php', [
+            'event' => ['name' => 'テストイベント'],
+            'url' => static fn (string $path = ''): string => 'http://example.test/qr-sr/' . $path,
+        ], 'participant/layout.php');
+
+        self::assertStringContainsString('入力内容は送信されていません', $html);
+        self::assertStringContainsString('http://example.test/qr-sr/', $html);
+        self::assertStringContainsString('イベント入口へ戻る', $html);
+        self::assertStringNotContainsString('管理者ログインへ戻る', $html);
+    }
 }

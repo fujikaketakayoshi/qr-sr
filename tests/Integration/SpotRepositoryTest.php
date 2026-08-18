@@ -76,4 +76,13 @@ final class SpotRepositoryTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->spots->delete($spotId);
     }
+
+    public function testSpotInputCannotInjectSql(): void
+    {
+        $attack = "'); DROP TABLE spots; --";
+        $id = $this->spots->create(new SpotInput($attack, $attack));
+
+        self::assertSame($attack, $this->spots->find($id)['name']);
+        self::assertSame(1, (int) $this->database->query('SELECT COUNT(*) FROM spots')->fetchColumn());
+    }
 }

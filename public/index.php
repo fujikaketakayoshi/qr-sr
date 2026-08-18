@@ -27,6 +27,8 @@ use QrRally\Repository\ParticipantRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Security\SpotToken;
 use QrRally\Security\ParticipantToken;
+use QrRally\Security\ParticipantCookie;
+use QrRally\Security\TrafficMonitor;
 use QrRally\Session\Flash;
 use QrRally\Session\SessionManager;
 use QrRally\Support\UrlGenerator;
@@ -67,6 +69,10 @@ $csrf = new CsrfToken();
 $flash = new Flash();
 $urls = new UrlGenerator($config->string('base_url'));
 $database = $container['database'];
+$traffic = new TrafficMonitor(
+    dirname($config->string('database_path')) . '/runtime/traffic.sqlite',
+    $config->string('app_key'),
+);
 $admins = new AdminRepository($database);
 $logs = new AuditLogRepository($database);
 $auth = new AdminAuth(
@@ -125,8 +131,11 @@ $participantController = new ParticipantController(
     $participantToken,
     $logs,
     $config->string('app_key'),
-    $config->bool('cookie_secure'),
-    (string) (parse_url($config->string('base_url'), PHP_URL_PATH) ?: '/'),
+    new ParticipantCookie(
+        $config->bool('cookie_secure'),
+        (string) (parse_url($config->string('base_url'), PHP_URL_PATH) ?: '/'),
+    ),
+    $traffic,
 );
 $applicationController = new ApplicationController(
     $templates, new ViewData($urls, $csrf, $flash), $urls, $csrf, $flash, $auth,
@@ -149,6 +158,6 @@ $printController = new PrintController(
 );
 $request = Request::fromGlobals();
 
-(new Application($controller, $spotController, $participantController, $applicationController, $printController, $templates, $config->string('base_url')))
+(new Application($controller, $spotController, $participantController, $applicationController, $printController, $templates, $config->string('base_url'), $traffic))
     ->handle($request)
     ->send();

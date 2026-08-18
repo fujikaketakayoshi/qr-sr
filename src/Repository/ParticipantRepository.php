@@ -6,12 +6,19 @@ namespace QrRally\Repository;
 
 use PDO;
 use PDOException;
+use QrRally\Database\SqliteWriteRetrier;
 use QrRally\Security\ParticipantToken;
 
 final class ParticipantRepository
 {
-    public function __construct(private readonly PDO $database, private readonly ParticipantToken $tokens)
-    {
+    private SqliteWriteRetrier $writes;
+
+    public function __construct(
+        private readonly PDO $database,
+        private readonly ParticipantToken $tokens,
+        ?SqliteWriteRetrier $writes = null,
+    ) {
+        $this->writes = $writes ?? new SqliteWriteRetrier();
     }
 
     public function create(string $token, string $nickname): int
@@ -20,7 +27,7 @@ final class ParticipantRepository
             'INSERT INTO participants (token_hash, nickname, first_seen_at, last_seen_at, created_at, updated_at) '
             . "VALUES (:hash, :nickname, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
         );
-        $statement->execute(['hash' => $this->tokens->hash($token), 'nickname' => $nickname]);
+        $this->writes->run(fn () => $statement->execute(['hash' => $this->tokens->hash($token), 'nickname' => $nickname]));
 
         return (int) $this->database->lastInsertId();
     }
@@ -37,8 +44,8 @@ final class ParticipantRepository
         if (!is_array($participant)) {
             return null;
         }
-        $this->database->prepare("UPDATE participants SET last_seen_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id")
-            ->execute(['id' => $participant['id']]);
+        $statement = $this->database->prepare("UPDATE participants SET last_seen_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id");
+        $this->writes->run(fn () => $statement->execute(['id' => $participant['id']]));
 
         return $participant;
     }
@@ -46,18 +53,20 @@ final class ParticipantRepository
     /** @return 'acquired'|'duplicate' */
     public function acquire(int $participantId, int $spotId, ?string $ipHash): string
     {
-        try {
-            $statement = $this->database->prepare(
-                "INSERT INTO stamp_acquisitions (participant_id, spot_id, acquired_at, ip_hash) VALUES (:participant_id, :spot_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), :ip_hash)",
-            );
-            $statement->execute(['participant_id' => $participantId, 'spot_id' => $spotId, 'ip_hash' => $ipHash]);
-            return 'acquired';
-        } catch (PDOException $error) {
-            if ((string) $error->getCode() === '23000') {
-                return 'duplicate';
+        return $this->writes->run(function () use ($participantId, $spotId, $ipHash): string {
+            try {
+                $statement = $this->database->prepare(
+                    "INSERT INTO stamp_acquisitions (participant_id, spot_id, acquired_at, ip_hash) VALUES (:participant_id, :spot_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), :ip_hash)",
+                );
+                $statement->execute(['participant_id' => $participantId, 'spot_id' => $spotId, 'ip_hash' => $ipHash]);
+                return 'acquired';
+            } catch (PDOException $error) {
+                if ((string) $error->getCode() === '23000') {
+                    return 'duplicate';
+                }
+                throw $error;
             }
-            throw $error;
-        }
+        });
     }
 
     public function acquisitionCount(int $participantId): int
@@ -87,7 +96,7 @@ final class ParticipantRepository
         $statement = $this->database->prepare(
             "UPDATE participants SET completed_at = COALESCE(completed_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id",
         );
-        $statement->execute(['id' => $participantId]);
+        $this->writes->run(fn () => $statement->execute(['id' => $participantId]));
         return true;
     }
 }

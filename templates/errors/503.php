@@ -1,0 +1,1 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ただいま混み合っています</title></head><body><main><h1>ただいまアクセスが集中しています</h1><p>少し時間をおいて、もう一度QRコードを読み取ってください。</p></main></body></html>

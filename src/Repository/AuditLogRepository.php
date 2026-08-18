@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace QrRally\Repository;
 
 use PDO;
+use QrRally\Database\SqliteWriteRetrier;
 
 final class AuditLogRepository
 {
-    public function __construct(private readonly PDO $database)
+    private SqliteWriteRetrier $writes;
+
+    public function __construct(private readonly PDO $database, ?SqliteWriteRetrier $writes = null)
     {
+        $this->writes = $writes ?? new SqliteWriteRetrier();
     }
 
     /** @param array<string, bool|int|string|null> $context */
@@ -27,7 +31,7 @@ final class AuditLogRepository
             . '(event_type, actor_type, actor_id, target_type, target_id, result, context_json, created_at) '
             . "VALUES (:event_type, :actor_type, :actor_id, :target_type, :target_id, :result, :context_json, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
         );
-        $statement->execute([
+        $values = [
             'event_type' => $eventType,
             'actor_type' => $actorType,
             'actor_id' => $actorId,
@@ -35,7 +39,8 @@ final class AuditLogRepository
             'target_id' => $targetId,
             'result' => $result,
             'context_json' => json_encode($context, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
-        ]);
+        ];
+        $this->writes->run(fn () => $statement->execute($values));
     }
 
     /** @return list<array<string, mixed>> */

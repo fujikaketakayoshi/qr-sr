@@ -106,7 +106,7 @@ final class ApplicationController
 
     public function confirm(Request $request): Response
     {
-        if (!$this->csrf->verify($request->input('_csrf'))) return new Response($this->templates->render('errors/419.php'), 419);
+        if (!$this->csrf->verify($request->input('_csrf'))) return $this->participantCsrfFailure();
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
         if (!$this->canApply($event, $participant)) {
@@ -125,7 +125,7 @@ final class ApplicationController
 
     public function submit(Request $request): Response
     {
-        if (!$this->csrf->verify($request->input('_csrf'))) return new Response($this->templates->render('errors/419.php'), 419);
+        if (!$this->csrf->verify($request->input('_csrf'))) return $this->participantCsrfFailure();
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
         $confirmed = $_SESSION['_application_confirmed'] ?? null;
@@ -182,7 +182,8 @@ final class ApplicationController
     /** @return array{0:array<string,mixed>,1:array<string,mixed>,2:?Response} */
     private function participantContext(Request $request): array { $event=$this->events->find(); $token=$request->cookie(self::COOKIE_NAME); $participant=$token===null?null:$this->participants->findByToken($token); if($event===null||$participant===null)return [$event??[],$participant??[],Response::redirect($this->urls->to(''))]; return [$event,$participant,null]; }
     private function requireAdmin(): ?Response { return $this->auth->id()===null?Response::redirect($this->urls->to('admin/login'),302):null; }
-    private function guardAdminPost(Request $request): ?Response { if(($r=$this->requireAdmin())!==null)return $r; return !$this->csrf->verify($request->input('_csrf'))?new Response($this->templates->render('errors/419.php'),419):null; }
+    private function guardAdminPost(Request $request): ?Response { if(($r=$this->requireAdmin())!==null)return $r; return !$this->csrf->verify($request->input('_csrf'))?$this->adminView('errors/419.php',[],'操作を続けられません',419):null; }
+    private function participantCsrfFailure(): Response { return $this->participantView('errors/participant-419.php',['event'=>$this->events->find()],419); }
     /** @param array<string,string> $columns @param list<array<string,mixed>> $rows */
     private function csvResponse(array $columns,array $rows,string $logEvent,string $filename):Response{ $stream=fopen('php://temp','r+'); fwrite($stream,"\xEF\xBB\xBF"); fputcsv($stream,array_map(fn($value)=>$this->csvValues->safe($value),array_values($columns))); foreach($rows as $row){$line=[];foreach(array_keys($columns) as $key)$line[]=$this->csvValues->safe((string)($row[$key]??''));fputcsv($stream,$line);} rewind($stream);$body=stream_get_contents($stream);fclose($stream);$this->logs->record($logEvent,'admin',$this->auth->id(),'success');return new Response((string)$body,200,['Content-Type'=>'text/csv; charset=UTF-8','Content-Disposition'=>'attachment; filename="'.$filename.'"','Cache-Control'=>'private, no-store','X-Content-Type-Options'=>'nosniff']); }
     private function adminView(string $template,array $data,string $title,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data,['title'=>$title])),$status);}
