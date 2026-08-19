@@ -10,18 +10,20 @@ final class Request
      * @param array<string, mixed> $server
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
+     * @param array<string, mixed> $files
      */
     public function __construct(
         private readonly array $server,
         private readonly array $query = [],
         private readonly array $post = [],
         private readonly array $cookies = [],
+        private readonly array $files = [],
     ) {
     }
 
     public static function fromGlobals(): self
     {
-        return new self($_SERVER, $_GET, $_POST, $_COOKIE);
+        return new self($_SERVER, $_GET, $_POST, $_COOKIE, $_FILES);
     }
 
     public function method(): string
@@ -70,5 +72,18 @@ final class Request
         $value = $this->cookies[$key] ?? null;
 
         return is_string($value) ? $value : null;
+    }
+
+    /** @return array{name: string, tmp_name: string, error: int, size: int}|null */
+    public function uploadedFile(string $key): ?array
+    {
+        $file = $this->files[$key] ?? null;
+        if (!is_array($file) || !isset($file['name'], $file['tmp_name'], $file['error'], $file['size'])
+            || !is_string($file['name']) || !is_string($file['tmp_name'])
+            || !is_int($file['error']) || !is_int($file['size'])) {
+            return null;
+        }
+
+        return ['name' => $file['name'], 'tmp_name' => $file['tmp_name'], 'error' => $file['error'], 'size' => $file['size']];
     }
 }

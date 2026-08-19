@@ -6,6 +6,7 @@ project-docs/
 /storage/logs/*.log
 /storage/fonts/
 /storage/runtime/
+/storage/backups/
 /storage/cookie-probe-state.json
 /.phpunit.cache/
 /output/

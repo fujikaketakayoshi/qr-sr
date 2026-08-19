@@ -6,8 +6,11 @@
     "require": {
         "php": "^8.3",
         "ext-mbstring": "*",
+        "ext-fileinfo": "*",
         "ext-pdo": "*",
         "ext-pdo_sqlite": "*",
+        "ext-sqlite3": "*",
+        "ext-zip": "*",
         "dompdf/dompdf": "^3.1",
         "endroid/qr-code": "^6.0"
     },

@@ -91,4 +91,9 @@ final class AdminAuth
         }
         $this->sessions->destroy();
     }
+
+    public function forceLogout(): void
+    {
+        $this->sessions->destroy();
+    }
 }

@@ -15,6 +15,9 @@ use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
 use QrRally\Controller\ApplicationController;
 use QrRally\Controller\PrintController;
+use QrRally\Controller\BackupController;
+use QrRally\Backup\BackupManager;
+use QrRally\Backup\RestoreStateStore;
 use QrRally\Domain\ApplicationValidator;
 use QrRally\Repository\ApplicationRepository;
 use QrRally\Domain\EventValidator;
@@ -24,6 +27,7 @@ use QrRally\Repository\EventRepository;
 use QrRally\Repository\LoginAttemptRepository;
 use QrRally\Repository\SpotRepository;
 use QrRally\Repository\ParticipantRepository;
+use QrRally\Repository\BackupOperationRepository;
 use QrRally\Security\CsrfToken;
 use QrRally\Security\SpotToken;
 use QrRally\Security\ParticipantToken;
@@ -156,8 +160,31 @@ $printController = new PrintController(
     dirname(__DIR__) . '/public/assets/fonts',
     $config->string('timezone'),
 );
+$restoreStates = new RestoreStateStore(dirname(__DIR__) . '/storage/backups/restore-state.json');
+$backupManager = new BackupManager(
+    $config->string('database_path'),
+    dirname(__DIR__) . '/storage/backups',
+    $config->string('base_url'),
+    $config->int('database_busy_timeout_ms'),
+);
+$backupController = new BackupController(
+    $templates,
+    new ViewData($urls, $csrf, $flash),
+    $urls,
+    $csrf,
+    $flash,
+    $auth,
+    $admins,
+    new EventRepository($database),
+    new ApplicationRepository($database),
+    new BackupOperationRepository($database),
+    $logs,
+    $backupManager,
+    $restoreStates,
+    $config->string('base_url'),
+);
 $request = Request::fromGlobals();
 
-(new Application($controller, $spotController, $participantController, $applicationController, $printController, $templates, $config->string('base_url'), $traffic))
+(new Application($controller, $spotController, $participantController, $applicationController, $printController, $backupController, $templates, $config->string('base_url'), $traffic, $restoreStates))
     ->handle($request)
     ->send();

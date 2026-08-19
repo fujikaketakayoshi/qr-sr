@@ -9,6 +9,8 @@ use QrRally\Controller\SpotController;
 use QrRally\Controller\ParticipantController;
 use QrRally\Controller\ApplicationController;
 use QrRally\Controller\PrintController;
+use QrRally\Controller\BackupController;
+use QrRally\Backup\RestoreStateStore;
 use QrRally\Exception\DatabaseBusyException;
 use QrRally\Security\TrafficMonitor;
 use QrRally\View\TemplateRenderer;
@@ -21,9 +23,11 @@ final class Application
         private readonly ParticipantController $participants,
         private readonly ApplicationController $applications,
         private readonly PrintController $prints,
+        private readonly BackupController $backups,
         private readonly TemplateRenderer $templates,
         private readonly string $baseUrl,
         private readonly TrafficMonitor $traffic,
+        private readonly RestoreStateStore $restoreStates,
     ) {
     }
 
@@ -31,6 +35,13 @@ final class Application
     {
         $path = $request->path($this->baseUrl);
         $isAdminPath = $path === '/admin' || str_starts_with($path, '/admin/');
+        if (!$isAdminPath && $this->restoreStates->isMaintenance()) {
+            return new Response($this->templates->render('errors/503.php'), 503, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'Cache-Control' => 'no-store',
+                'Retry-After' => '5',
+            ]);
+        }
         if (!$isAdminPath && !$this->traffic->allowRequest($request->clientIp())) {
             return new Response($this->templates->render('errors/429.php'), 429, [
                 'Content-Type' => 'text/html; charset=UTF-8',
@@ -76,6 +87,10 @@ final class Application
             'GET /admin/applications.csv' => $this->applications->csv(),
             'GET /admin/applications/applicants.csv' => $this->applications->applicationsCsv(),
             'GET /admin/logs' => $this->admin->logs(),
+            'GET /admin/backup' => $this->backups->index(),
+            'POST /admin/backup/download' => $this->backups->download($request),
+            'POST /admin/backup/upload' => $this->backups->upload($request),
+            'POST /admin/backup/restore' => $this->backups->restore($request),
             'GET /admin/spots' => $this->spots->index(),
             'GET /admin/spots/create' => $this->spots->createForm(),
             'POST /admin/spots' => $this->spots->create($request),
