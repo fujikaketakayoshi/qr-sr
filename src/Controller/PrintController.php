@@ -48,6 +48,8 @@ final class PrintController
             'qrDataUri' => $this->dataUri($this->urls->to('')),
             'startsAt' => $this->displayDate((string) $event['starts_at']),
             'endsAt' => $this->displayDate((string) $event['ends_at']),
+            'returnPath' => 'admin/event',
+            'returnLabel' => 'イベント設定へ戻る',
         ]);
     }
 

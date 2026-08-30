@@ -17,6 +17,8 @@ final class BackupManager
 {
     public const PRODUCT = 'qr-stamp-rally';
     public const FORMAT_VERSION = 1;
+    public const CURRENT_PRODUCT_VERSION = '0.1.0-dev';
+    public const CURRENT_SCHEMA_VERSION = '1';
     public const MAX_ZIP_BYTES = 100 * 1024 * 1024;
     public const MAX_DATABASE_BYTES = 250 * 1024 * 1024;
 
@@ -32,6 +34,7 @@ final class BackupManager
         private readonly string $baseUrl,
         private readonly int $busyTimeoutMs = 5000,
         private readonly ?Closure $beforeSwitchForTesting = null,
+        private readonly ?string $spotTokenKey = null,
     ) {
     }
 
@@ -43,6 +46,7 @@ final class BackupManager
         $zipPath = $directory . '/backup.zip';
         try {
             $this->onlineBackup($this->databasePath, $database);
+            $this->storeSpotTokenKey($database);
             $pdo = $this->openReadOnly($database);
             $this->assertIntegrity($pdo);
             $manifest = $this->manifest($pdo, $database);
@@ -75,6 +79,18 @@ final class BackupManager
     /** @return array{work_directory: string, database_path: string, archive_hash: string, manifest: array<string, mixed>} */
     public function validateUploaded(string $uploadedPath, int $size): array
     {
+        return $this->validateArchive($uploadedPath, $size, false);
+    }
+
+    /** @return array{work_directory: string, database_path: string, archive_hash: string, manifest: array<string, mixed>} */
+    public function validateUploadedForInstall(string $uploadedPath, int $size): array
+    {
+        return $this->validateArchive($uploadedPath, $size, true);
+    }
+
+    /** @return array{work_directory: string, database_path: string, archive_hash: string, manifest: array<string, mixed>} */
+    private function validateArchive(string $uploadedPath, int $size, bool $newEnvironment): array
+    {
         if ($size < 1 || $size > self::MAX_ZIP_BYTES || !is_file($uploadedPath)) {
             throw new BackupException('100MB以下のバックアップZIPを選択してください。');
         }
@@ -96,7 +112,19 @@ final class BackupManager
             $this->assertRequiredTables($pdo);
             $this->assertCounts($pdo, $manifest['table_counts']);
             $this->assertForeignKeys($pdo);
-            $this->assertCompatibility($pdo, $manifest);
+            $backupSpotTokenKey = $this->backupSpotTokenKey($pdo);
+            if ($newEnvironment && $backupSpotTokenKey === null) {
+                throw new BackupException(
+                    'このバックアップには既存QRコードの維持に必要な情報がありません。旧環境を更新後、バックアップを作り直してください。',
+                );
+            }
+            if (!$newEnvironment && $backupSpotTokenKey !== null && $this->spotTokenKey !== null
+                && !hash_equals($this->spotTokenKey, $backupSpotTokenKey)) {
+                throw new BackupException('QRコードの秘密鍵が現在の環境と異なります。新しい環境のインストーラーから復元してください。');
+            }
+            $newEnvironment
+                ? $this->assertInstallCompatibility($pdo, $manifest)
+                : $this->assertCompatibility($pdo, $manifest);
             return [
                 'work_directory' => $directory,
                 'database_path' => $databasePath,
@@ -106,6 +134,56 @@ final class BackupManager
         } catch (Throwable $error) {
             $this->removeDirectory($directory);
             throw $error instanceof BackupException ? $error : new BackupException('バックアップを検証できません。', 0, $error);
+        }
+    }
+
+    /** @param array<string, mixed> $manifest */
+    public function installValidatedDatabase(string $candidatePath, string $destinationPath, array $manifest): void
+    {
+        if (!is_file($candidatePath) || file_exists($destinationPath)) {
+            throw new BackupException('復元用データが見つからないか、保存先に既存DBがあります。');
+        }
+        $destinationDirectory = dirname($destinationPath);
+        if (!is_dir($destinationDirectory) && !mkdir($destinationDirectory, 0700, true) && !is_dir($destinationDirectory)) {
+            throw new BackupException('DBの保存先を作成できません。');
+        }
+        try {
+            $candidate = $this->openReadOnly($candidatePath);
+            $this->assertManifest($manifest, $candidatePath);
+            $this->assertIntegrity($candidate);
+            $this->assertRequiredTables($candidate);
+            $this->assertCounts($candidate, $manifest['table_counts']);
+            $this->assertForeignKeys($candidate);
+            $this->assertInstallCompatibility($candidate, $manifest);
+            if ($this->backupSpotTokenKey($candidate) === null) {
+                throw new BackupException('既存QRコードの維持に必要な情報がないため、新しい環境へ復元できません。');
+            }
+            if ((int) $candidate->query('SELECT COUNT(*) FROM admins')->fetchColumn() < 1) {
+                throw new BackupException('管理者が存在しないバックアップは復元できません。');
+            }
+            unset($candidate);
+            if (!rename($candidatePath, $destinationPath) || !chmod($destinationPath, 0600)) {
+                throw new BackupException('検証済みDBを正式な保存先へ配置できません。');
+            }
+            $restored = (new ConnectionFactory())->connect($destinationPath, $this->busyTimeoutMs);
+            $this->assertIntegrity($restored);
+            $this->assertForeignKeys($restored);
+            $statement = $restored->prepare(
+                "INSERT INTO backup_operations (operation_type, status, backup_version, file_hash, created_at, updated_at) "
+                . "VALUES ('restore', 'completed', :version, :hash, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+            );
+            $statement->execute(['version' => (string) self::FORMAT_VERSION, 'hash' => (string) $manifest['database_sha256']]);
+            $log = $restored->prepare(
+                "INSERT INTO audit_logs (event_type, actor_type, actor_id, result, context_json, created_at) "
+                . "VALUES ('backup.restore.new_environment', 'system', NULL, 'success', :context, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+            );
+            $log->execute(['context' => json_encode(['source_created_at' => $manifest['created_at']], JSON_THROW_ON_ERROR)]);
+            $restored->exec('PRAGMA wal_checkpoint(TRUNCATE)');
+        } catch (Throwable $error) {
+            @unlink($destinationPath);
+            @unlink($destinationPath . '-wal');
+            @unlink($destinationPath . '-shm');
+            throw $error instanceof BackupException ? $error : new BackupException('新しい環境への復元に失敗しました。', 0, $error);
         }
     }
 
@@ -129,6 +207,7 @@ final class BackupManager
                 throw new BackupException('データベースを切り替えられません。');
             }
             $restored = (new ConnectionFactory())->connect($this->databasePath, $this->busyTimeoutMs);
+            $this->removeBackupSecrets($restored);
             $this->assertIntegrity($restored);
             $this->assertForeignKeys($restored);
             $statement = $restored->prepare(
@@ -172,6 +251,20 @@ final class BackupManager
     public function cleanup(string $directory): void
     {
         $this->removeDirectory($directory);
+    }
+
+    public function cleanupExpired(int $lifetimeSeconds = 3600): void
+    {
+        if (!is_dir($this->workRoot)) {
+            return;
+        }
+        $threshold = time() - max(60, $lifetimeSeconds);
+        foreach (glob(rtrim($this->workRoot, DIRECTORY_SEPARATOR) . '/restore-*', GLOB_ONLYDIR) ?: [] as $directory) {
+            $modified = filemtime($directory);
+            if (is_int($modified) && $modified < $threshold) {
+                $this->removeDirectory($directory);
+            }
+        }
     }
 
     public function databaseSize(): string
@@ -272,6 +365,45 @@ final class BackupManager
         if (!is_string($manifest['database_sha256']) || !hash_equals($manifest['database_sha256'], hash_file('sha256', $databasePath))) {
             throw new BackupException('データベースのハッシュが一致しません。');
         }
+    }
+
+    private function storeSpotTokenKey(string $databasePath): void
+    {
+        if ($this->spotTokenKey === null || !preg_match('/^[a-f0-9]{64}$/', $this->spotTokenKey)) {
+            throw new BackupException('QRコード維持用の秘密鍵が不正です。');
+        }
+        $database = (new ConnectionFactory())->connect($databasePath, $this->busyTimeoutMs);
+        $database->exec('CREATE TABLE backup_secrets (name TEXT PRIMARY KEY, value TEXT NOT NULL)');
+        $statement = $database->prepare('INSERT INTO backup_secrets (name, value) VALUES (:name, :value)');
+        $statement->execute(['name' => 'spot_token_key', 'value' => $this->spotTokenKey]);
+        $database->exec('PRAGMA wal_checkpoint(TRUNCATE)');
+    }
+
+    private function backupSpotTokenKey(PDO $database): ?string
+    {
+        $table = $database->query("SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn();
+        if ($table === false) {
+            return null;
+        }
+        $statement = $database->prepare('SELECT value FROM backup_secrets WHERE name = :name');
+        $statement->execute(['name' => 'spot_token_key']);
+        $value = $statement->fetchColumn();
+        return is_string($value) && preg_match('/^[a-f0-9]{64}$/', $value) ? $value : null;
+    }
+
+    public function consumeSpotTokenKey(PDO $database): string
+    {
+        $key = $this->backupSpotTokenKey($database);
+        if ($key === null) {
+            throw new BackupException('既存QRコードの維持に必要な情報がありません。');
+        }
+        $this->removeBackupSecrets($database);
+        return $key;
+    }
+
+    private function removeBackupSecrets(PDO $database): void
+    {
+        $database->exec('DROP TABLE IF EXISTS backup_secrets');
     }
 
     private function assertArchiveEntries(ZipArchive $zip): void
@@ -381,6 +513,24 @@ final class BackupManager
         $source = preg_replace('/[^0-9.].*$/', '', (string) ($manifest['product_version'] ?? '')) ?: '0.0.0';
         $currentVersion = preg_replace('/[^0-9.].*$/', '', (string) ($currentSettings['product_version'] ?? '')) ?: '0.0.0';
         if (version_compare($source, $currentVersion, '>')) {
+            throw new BackupException('新しい製品バージョンのバックアップは復元できません。');
+        }
+    }
+
+    /** @param array<string, mixed> $manifest */
+    private function assertInstallCompatibility(PDO $database, array $manifest): void
+    {
+        $settings = $this->settings($database);
+        if (($manifest['schema_version'] ?? null) !== ($settings['schema_version'] ?? null)
+            || ($settings['schema_version'] ?? null) !== self::CURRENT_SCHEMA_VERSION) {
+            throw new BackupException('DBスキーマのバージョンに互換性がありません。');
+        }
+        if (($manifest['product_version'] ?? null) !== ($settings['product_version'] ?? null)) {
+            throw new BackupException('製品バージョン情報がDBと一致しません。');
+        }
+        $source = preg_replace('/[^0-9.].*$/', '', (string) ($manifest['product_version'] ?? '')) ?: '0.0.0';
+        $current = preg_replace('/[^0-9.].*$/', '', self::CURRENT_PRODUCT_VERSION) ?: '0.0.0';
+        if (version_compare($source, $current, '>')) {
             throw new BackupException('新しい製品バージョンのバックアップは復元できません。');
         }
     }

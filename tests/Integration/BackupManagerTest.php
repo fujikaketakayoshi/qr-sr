@@ -33,7 +33,14 @@ final class BackupManagerTest extends TestCase
             "INSERT INTO admins (email, password_hash, recovery_key_hash, created_at, updated_at) "
             . "VALUES ('admin@example.test', 'hash', 'recovery', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
         );
-        $this->manager = new BackupManager($this->databasePath, $this->workRoot, 'http://localhost/qr-sr/', 1000);
+        $this->manager = new BackupManager(
+            $this->databasePath,
+            $this->workRoot,
+            'http://localhost/qr-sr/',
+            1000,
+            null,
+            str_repeat('a', 64),
+        );
     }
 
     protected function tearDown(): void
@@ -48,6 +55,7 @@ final class BackupManagerTest extends TestCase
         self::assertSame('qr-stamp-rally', $backup['manifest']['product']);
         self::assertSame(1, $backup['manifest']['backup_version']);
         self::assertSame(1, $backup['manifest']['table_counts']['admins']);
+        self::assertSame(1, $backup['manifest']['table_counts']['backup_secrets']);
 
         $zip = new ZipArchive();
         self::assertTrue($zip->open($backup['path']) === true);
@@ -97,6 +105,7 @@ final class BackupManagerTest extends TestCase
         self::assertSame('admin@example.test', $restored->query('SELECT email FROM admins WHERE id = 1')->fetchColumn());
         self::assertSame(1, (int) $restored->query("SELECT COUNT(*) FROM backup_operations WHERE operation_type = 'restore' AND status = 'completed'")->fetchColumn());
         self::assertSame(1, (int) $restored->query("SELECT COUNT(*) FROM audit_logs WHERE event_type = 'backup.restore'")->fetchColumn());
+        self::assertSame(0, (int) $restored->query("SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn());
         self::assertSame('completed', $states->read()['status'] ?? null);
         $this->database = $restored;
     }

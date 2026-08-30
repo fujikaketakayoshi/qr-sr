@@ -1,4 +1,4 @@
-<div class="page-heading"><div><p class="eyebrow">EVENT</p><h1>イベント設定</h1></div></div>
+<div class="page-heading"><div><p class="eyebrow">EVENT</p><h1>イベント設定</h1></div><?php if ($eventExists): ?><div class="export-actions"><a class="button secondary" href="<?= htmlspecialchars($url('admin/print/entrance'), ENT_QUOTES, 'UTF-8') ?>">入口案内を印刷</a></div><?php endif; ?></div>
 <?php require dirname(__DIR__) . '/form-error-summary.php'; ?>
 <form class="panel form-grid" method="post" action="<?= htmlspecialchars($url('admin/event'), ENT_QUOTES, 'UTF-8') ?>">
     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

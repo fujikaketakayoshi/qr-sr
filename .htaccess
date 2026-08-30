@@ -13,6 +13,7 @@ Options -Indexes
 
     RewriteRule ^$ public/index.php [L]
     RewriteRule ^assets/(.+)$ public/assets/$1 [L]
+    RewriteRule ^install/?$ public/install.php [L,NC]
     RewriteRule ^ public/index.php [L]
 </IfModule>
 

@@ -18,6 +18,7 @@ final class ConfigTest extends TestCase
         putenv('APP_ENV');
         putenv('APP_BASE_URL');
         putenv('APP_DATABASE_PATH');
+        putenv('SPOT_TOKEN_KEY');
     }
 
     protected function tearDown(): void
@@ -25,6 +26,7 @@ final class ConfigTest extends TestCase
         putenv('APP_ENV');
         putenv('APP_BASE_URL');
         putenv('APP_DATABASE_PATH');
+        putenv('SPOT_TOKEN_KEY');
         @unlink($this->path);
     }
 
@@ -36,6 +38,7 @@ final class ConfigTest extends TestCase
 
         self::assertSame('development', $config->string('env'));
         self::assertFalse($config->bool('cookie_secure'));
+        self::assertSame(str_repeat('a', 64), $config->string('spot_token_key'));
     }
 
     public function testEnvironmentVariablesOverrideLocationValues(): void

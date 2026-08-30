@@ -20,7 +20,7 @@ body { margin: 0; background: #eef3f1; }
 .spot-qr { width: 122mm; }
 .event-name { margin: 0 0 .5rem; color: #52615d; }
 .scan-lead { margin: .5rem 0 1rem; font-size: 1.35rem; font-weight: 700; }
-.browser-notice { margin-top: 1rem; padding: 1rem 1.2rem; color: #612b13; background: #fff4e5; border: 2px solid #e87817; border-radius: .7rem; line-height: 1.6; text-align: left; }
+.browser-notice { margin-top: 1rem; padding: 1rem 1.2rem; color: #6b4600; background: #fff4d6; border: 2px solid #d98a00; border-radius: .7rem; line-height: 1.6; text-align: left; }
 .browser-notice p { margin: .45rem 0; }
 .browser-notice.compact { margin-right: auto; margin-left: auto; max-width: 170mm; }
 .print-url { margin-top: 1rem; color: #66736f; overflow-wrap: anywhere; font-size: .75rem; }

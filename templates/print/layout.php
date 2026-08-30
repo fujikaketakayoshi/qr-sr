@@ -9,7 +9,7 @@
 <body>
 <div class="print-toolbar">
     <button type="button" onclick="window.print()">印刷する</button>
-    <a href="<?= htmlspecialchars($url('admin/spots'), ENT_QUOTES, 'UTF-8') ?>">スポット管理へ戻る</a>
+    <a href="<?= htmlspecialchars($url($returnPath ?? 'admin/spots'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($returnLabel ?? 'スポット管理へ戻る', ENT_QUOTES, 'UTF-8') ?></a>
 </div>
 <main><?= $content ?></main>
 </body>

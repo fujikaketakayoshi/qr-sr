@@ -34,6 +34,10 @@ if (!isset($configuration['app_key']) || !is_string($configuration['app_key']) |
     $configuration['app_key'] = bin2hex(random_bytes(32));
     $configurationChanged = true;
 }
+if (!isset($configuration['spot_token_key']) || !is_string($configuration['spot_token_key']) || strlen($configuration['spot_token_key']) < 64) {
+    $configuration['spot_token_key'] = $configuration['app_key'];
+    $configurationChanged = true;
+}
 
 foreach (require $root . '/config/app.example.php' as $key => $default) {
     if (!array_key_exists($key, $configuration)) {

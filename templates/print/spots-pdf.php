@@ -15,7 +15,7 @@ body { margin: 0; color: #15201d; font-family: "Noto Sans JP", sans-serif; }
 h1 { width: 172mm; margin: 4mm auto 3mm; font-size: 27pt; line-height: 1.35; overflow-wrap: break-word; }
 .qr { display: block; width: 116mm; height: 116mm; margin: 2mm auto 3mm; }
 .lead { margin: 0 0 4mm; font-size: 17pt; font-weight: 700; }
-.notice { margin: 0 8mm; padding: 4mm 6mm; color: #612b13; background: #fff4e5; border: 1.2pt solid #e87817; border-radius: 4mm; font-size: 10.5pt; line-height: 1.55; text-align: left; }
+.notice { margin: 0 8mm; padding: 4mm 6mm; color: #6b4600; background: #fff4d6; border: 1.2pt solid #d98a00; border-radius: 4mm; font-size: 10.5pt; line-height: 1.55; text-align: left; }
 .notice p { margin: 0 0 2mm; }
 .notice p:last-child { margin-bottom: 0; }
 </style>

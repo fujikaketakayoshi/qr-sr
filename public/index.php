@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use QrRally\Http\ErrorHandler;
+use QrRally\Config\Config;
 use QrRally\Http\Application;
 use QrRally\Http\Request;
+use QrRally\Http\Response;
 use QrRally\Auth\AdminAuth;
 use QrRally\Auth\CredentialUpdater;
 use QrRally\Auth\PasswordPolicy;
@@ -47,20 +49,33 @@ use QrRally\View\TemplateRenderer;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 $templates = new TemplateRenderer(dirname(__DIR__) . '/templates');
+$publicConfigPath = dirname(__DIR__) . '/config/app.php';
+if (!is_file($publicConfigPath)) {
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/public/index.php'));
+    $basePath = preg_replace('#/(?:public/)?index\.php$#', '', $script) ?? '';
+    $installUrl = '/' . trim($basePath, '/') . ($basePath === '' ? '' : '/') . 'install';
+    header('Location: ' . $installUrl, true, 302);
+    exit;
+}
 
 try {
-    $container = require dirname(__DIR__) . '/bootstrap.php';
-    $config = $container['config'];
+    $config = Config::load($publicConfigPath);
 } catch (Throwable $error) {
-    (new ErrorHandler(false, dirname(__DIR__) . '/storage/logs/app.log', $templates))
-        ->handle($error);
+    $reference = bin2hex(random_bytes(6));
+    error_log(sprintf('[qr-rally] reference=%s config error: %s', $reference, $error->getMessage()));
+    (new Response($templates->render('errors/500.php', [
+        'reference' => $reference,
+        'debugMessage' => null,
+    ]), 500))->send();
 }
 
 (new ErrorHandler(
     $config->bool('debug'),
-    dirname(__DIR__) . '/storage/logs/app.log',
+    dirname($config->string('database_path')) . '/logs/app.log',
     $templates,
 ))->register();
+$container = require dirname(__DIR__) . '/bootstrap.php';
+$config = $container['config'];
 
 $sessions = new SessionManager();
 $sessions->start(
@@ -88,7 +103,7 @@ $auth = new AdminAuth(
     $config->string('app_key'),
     $config->int('session_lifetime_seconds'),
 );
-$spotRepository = new SpotRepository($database, new SpotToken($config->string('app_key')));
+$spotRepository = new SpotRepository($database, new SpotToken($config->string('spot_token_key')));
 $controller = new AdminController(
     $templates,
     new ViewData($urls, $csrf, $flash),
@@ -160,12 +175,15 @@ $printController = new PrintController(
     dirname(__DIR__) . '/public/assets/fonts',
     $config->string('timezone'),
 );
-$restoreStates = new RestoreStateStore(dirname(__DIR__) . '/storage/backups/restore-state.json');
+$privateStorage = dirname($config->string('database_path'));
+$restoreStates = new RestoreStateStore($privateStorage . '/backups/restore-state.json');
 $backupManager = new BackupManager(
     $config->string('database_path'),
-    dirname(__DIR__) . '/storage/backups',
+    $privateStorage . '/backups',
     $config->string('base_url'),
     $config->int('database_busy_timeout_ms'),
+    null,
+    $config->string('spot_token_key'),
 );
 $backupController = new BackupController(
     $templates,

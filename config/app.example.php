@@ -6,6 +6,7 @@ return [
     'env' => 'development',
     'base_url' => 'http://192.168.11.5/',
     'app_key' => '',
+    'spot_token_key' => '',
     'timezone' => 'Asia/Tokyo',
     'debug' => true,
     'log_level' => 'debug',

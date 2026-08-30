@@ -34,12 +34,19 @@ final class Config
             'base_url' => self::environment('APP_BASE_URL'),
             'database_path' => self::environment('APP_DATABASE_PATH'),
             'app_key' => self::environment('APP_KEY'),
+            'spot_token_key' => self::environment('SPOT_TOKEN_KEY'),
         ];
 
         foreach ($overrides as $key => $value) {
             if ($value !== null && $value !== '') {
                 $values[$key] = $value;
             }
+        }
+
+        // Existing installations generated before the dedicated QR key was
+        // introduced continue to derive the same spot tokens from app_key.
+        if (!isset($values['spot_token_key']) && isset($values['app_key'])) {
+            $values['spot_token_key'] = $values['app_key'];
         }
 
         self::validate($values);
@@ -96,6 +103,7 @@ final class Config
             'env' => 'string',
             'base_url' => 'string',
             'app_key' => 'string',
+            'spot_token_key' => 'string',
             'timezone' => 'string',
             'debug' => 'boolean',
             'log_level' => 'string',
@@ -127,6 +135,10 @@ final class Config
 
         if (strlen($values['app_key']) < 64) {
             throw new InvalidArgumentException('app_key must contain at least 64 characters.');
+        }
+
+        if (strlen($values['spot_token_key']) < 64) {
+            throw new InvalidArgumentException('spot_token_key must contain at least 64 characters.');
         }
 
         if (!in_array($values['timezone'], timezone_identifiers_list(), true)) {
