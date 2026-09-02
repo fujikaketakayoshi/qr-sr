@@ -2,7 +2,9 @@
 <p class="flash flash-success">DBと設定ファイルを作成しました。</p>
 <?php $diagnosticLabels = [
     'directory' => 'ディレクトリ', 'file' => 'ファイル作成・読取', 'sqlite' => 'SQLite',
-    'wal' => 'WALモード', 'lock' => 'ロック動作', 'cleanup' => '診断ファイルの削除',
+    'crud' => '作成・書込・読取・削除', 'upsert' => 'UPSERT', 'json' => 'JSON関数',
+    'foreign_key' => '外部キー制約', 'wal' => 'WALモード', 'lock' => 'ロック動作',
+    'cleanup' => '診断ファイルの削除',
 ]; ?>
 <section class="panel install-section">
     <h2>設置結果</h2>

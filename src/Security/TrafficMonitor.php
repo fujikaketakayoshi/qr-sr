@@ -40,14 +40,14 @@ final class TrafficMonitor
         $this->database->exec(
             'CREATE TABLE IF NOT EXISTS request_buckets ('
             . 'ip_hash TEXT NOT NULL, bucket INTEGER NOT NULL, request_count INTEGER NOT NULL, '
-            . 'PRIMARY KEY (ip_hash, bucket)) STRICT; '
+            . 'PRIMARY KEY (ip_hash, bucket)); '
             . 'CREATE INDEX IF NOT EXISTS request_buckets_bucket_index ON request_buckets (bucket); '
             . 'CREATE TABLE IF NOT EXISTS spot_accesses ('
             . 'participant_id INTEGER NOT NULL, spot_id INTEGER NOT NULL, ip_hash TEXT NOT NULL, accessed_at INTEGER NOT NULL, '
-            . 'PRIMARY KEY (participant_id, spot_id)) STRICT; '
+            . 'PRIMARY KEY (participant_id, spot_id)); '
             . 'CREATE INDEX IF NOT EXISTS spot_accesses_accessed_at_index ON spot_accesses (accessed_at); '
             . 'CREATE TABLE IF NOT EXISTS warning_cooldowns ('
-            . 'participant_id INTEGER PRIMARY KEY, warned_at INTEGER NOT NULL) STRICT;',
+            . 'participant_id INTEGER PRIMARY KEY, warned_at INTEGER NOT NULL);',
         );
         $this->clock = $clock ?? static fn (): int => time();
     }

@@ -12,19 +12,21 @@ final class PrintPdfGenerator
 {
     public function __construct(
         private readonly string $projectDirectory,
+        private readonly string $fontCacheDirectory,
     ) {
     }
 
     public function render(string $html): string
     {
-        $fontCache = $this->projectDirectory . '/storage/fonts';
-        if (!is_dir($fontCache) && !mkdir($fontCache, 0755, true) && !is_dir($fontCache)) {
+        if (!is_dir($this->fontCacheDirectory)
+            && !mkdir($this->fontCacheDirectory, 0700, true)
+            && !is_dir($this->fontCacheDirectory)) {
             throw new RuntimeException('PDF用フォントキャッシュを作成できません。');
         }
         $options = new Options();
         $options->setChroot($this->projectDirectory);
-        $options->setFontDir($fontCache);
-        $options->setFontCache($fontCache);
+        $options->setFontDir($this->fontCacheDirectory);
+        $options->setFontCache($this->fontCacheDirectory);
         $options->setDefaultFont('Noto Sans JP');
         $options->setIsFontSubsettingEnabled(true);
         $options->setIsRemoteEnabled(false);

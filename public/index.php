@@ -162,6 +162,7 @@ $applicationController = new ApplicationController(
     new ApplicationRepository($database), new ApplicationValidator(), $participantToken, $logs, new CsvValue(),
     $config->string('timezone'),
 );
+$privateStorage = dirname($config->string('database_path'));
 $printController = new PrintController(
     $templates,
     new ViewData($urls, $csrf, $flash),
@@ -171,11 +172,10 @@ $printController = new PrintController(
     $spotRepository,
     $logs,
     new QrCodeGenerator(),
-    new PrintPdfGenerator(dirname(__DIR__)),
+    new PrintPdfGenerator(dirname(__DIR__), $privateStorage . '/fonts'),
     dirname(__DIR__) . '/public/assets/fonts',
     $config->string('timezone'),
 );
-$privateStorage = dirname($config->string('database_path'));
 $restoreStates = new RestoreStateStore($privateStorage . '/backups/restore-state.json');
 $backupManager = new BackupManager(
     $config->string('database_path'),

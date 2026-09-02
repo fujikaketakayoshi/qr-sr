@@ -7,8 +7,17 @@ $fieldError = static function (string $name) use ($errors, $h): void {
 };
 $diagnosticLabels = [
     'directory' => 'ディレクトリ', 'file' => 'ファイル作成・読取', 'sqlite' => 'SQLite',
-    'wal' => 'WALモード', 'lock' => 'ロック動作', 'cleanup' => '診断ファイルの削除',
+    'crud' => '作成・書込・読取・削除', 'upsert' => 'UPSERT', 'json' => 'JSON関数',
+    'foreign_key' => '外部キー制約', 'wal' => 'WALモード', 'lock' => 'ロック動作',
+    'cleanup' => '診断ファイルの削除',
 ];
+$sqliteResult = static function (?string $version) use ($diagnostics, $h): string {
+    if ($version === null) {
+        return 'NG（確認できません）';
+    }
+    $supported = version_compare($version, $diagnostics['minimum_sqlite_version'], '>=');
+    return ($supported ? 'OK' : 'NG') . '（' . $h($version) . '）';
+};
 ?>
 <h1>セットアップ</h1>
 <p>新規インストール、またはこの製品で作成したバックアップから新しい環境へ復元できます。</p>
@@ -29,6 +38,8 @@ $diagnosticLabels = [
         <?php foreach ($diagnostics['extensions'] as $extension => $loaded): ?>
             <div><dt><?= $h($extension) ?></dt><dd><?= $loaded ? 'OK' : 'NG' ?></dd></div>
         <?php endforeach; ?>
+        <div><dt>PDO SQLite <?= $h($diagnostics['minimum_sqlite_version']) ?>以上</dt><dd><?= $sqliteResult($diagnostics['pdo_sqlite_version']) ?></dd></div>
+        <div><dt>SQLite3 <?= $h($diagnostics['minimum_sqlite_version']) ?>以上</dt><dd><?= $sqliteResult($diagnostics['sqlite3_version']) ?></dd></div>
         <?php foreach ($diagnostics['recommended_extensions'] as $extension => $loaded): ?>
             <div><dt><?= $h($extension) ?>（推奨）</dt><dd><?= $loaded ? 'OK' : '未使用' ?></dd></div>
         <?php endforeach; ?>
@@ -38,7 +49,7 @@ $diagnosticLabels = [
         <div><dt>HTTPS</dt><dd><?= $diagnostics['https'] ? 'OK' : '未使用' ?></dd></div>
     </dl>
     <?php if (!$diagnostics['requirements_met']): ?>
-        <p class="error">必須環境を満たしていません。NGになっている項目をサーバー側で有効にしてください。</p>
+        <p class="error">必須環境を満たしていません。NGになっている拡張またはSQLiteのバージョンを確認してください。</p>
     <?php elseif (!$diagnostics['https']): ?>
         <p class="warning-text">HTTPを検出しました。本番運用ではHTTPSが必須です。HTTPはlocalhostまたはLAN内での開発時だけ選択できます。</p>
     <?php endif; ?>

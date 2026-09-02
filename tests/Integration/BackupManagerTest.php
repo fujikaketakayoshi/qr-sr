@@ -105,7 +105,7 @@ final class BackupManagerTest extends TestCase
         self::assertSame('admin@example.test', $restored->query('SELECT email FROM admins WHERE id = 1')->fetchColumn());
         self::assertSame(1, (int) $restored->query("SELECT COUNT(*) FROM backup_operations WHERE operation_type = 'restore' AND status = 'completed'")->fetchColumn());
         self::assertSame(1, (int) $restored->query("SELECT COUNT(*) FROM audit_logs WHERE event_type = 'backup.restore'")->fetchColumn());
-        self::assertSame(0, (int) $restored->query("SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn());
+        self::assertSame(0, (int) $restored->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn());
         self::assertSame('completed', $states->read()['status'] ?? null);
         $this->database = $restored;
     }

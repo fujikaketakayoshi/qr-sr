@@ -25,7 +25,22 @@ final class PrintPdfGeneratorTest extends TestCase
             'fontDirectory' => $projectDirectory . '/public/assets/fonts',
         ]);
 
-        $pdf = (new PrintPdfGenerator($projectDirectory))->render($html);
+        $cacheDirectory = sys_get_temp_dir() . '/qr-rally-pdf-test-' . bin2hex(random_bytes(8));
+
+        try {
+            $pdf = (new PrintPdfGenerator($projectDirectory, $cacheDirectory))->render($html);
+
+            self::assertDirectoryExists($cacheDirectory);
+        } finally {
+            if (is_dir($cacheDirectory)) {
+                foreach (scandir($cacheDirectory) ?: [] as $file) {
+                    if ($file !== '.' && $file !== '..') {
+                        unlink($cacheDirectory . '/' . $file);
+                    }
+                }
+                rmdir($cacheDirectory);
+            }
+        }
 
         self::assertStringStartsWith('%PDF-', $pdf);
         self::assertGreaterThan(10_000, strlen($pdf));

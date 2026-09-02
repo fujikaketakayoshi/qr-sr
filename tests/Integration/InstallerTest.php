@@ -115,7 +115,7 @@ final class InstallerTest extends TestCase
         $restoredSpots = new SpotRepository($database, new SpotToken($config['spot_token_key']));
         self::assertSame($oldToken, $restoredSpots->publicToken($restoredSpots->find($spotId)));
         self::assertSame($spotId, $restoredSpots->findByPublicToken($oldToken)['id']);
-        self::assertSame(0, (int) $database->query("SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn());
+        self::assertSame(0, (int) $database->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn());
         self::assertFileExists($this->publicConfig);
     }
 

@@ -217,7 +217,7 @@ final class Installer
                 'admin_login_attempts', 'schema_migrations',
             ];
             $tables = array_map('strval', $database->query(
-                "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
             )->fetchAll(PDO::FETCH_COLUMN));
             if ($database->query('PRAGMA integrity_check')->fetchColumn() !== 'ok'
                 || $database->query('PRAGMA foreign_key_check')->fetch() !== false

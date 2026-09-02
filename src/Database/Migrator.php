@@ -21,7 +21,7 @@ final class Migrator
     {
         $this->database->exec(
             'CREATE TABLE IF NOT EXISTS schema_migrations ('
-            . 'migration TEXT PRIMARY KEY, applied_at TEXT NOT NULL) STRICT',
+            . 'migration TEXT PRIMARY KEY, applied_at TEXT NOT NULL)',
         );
 
         $files = glob($this->directory . '/*.sql');

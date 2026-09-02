@@ -11,6 +11,8 @@ use Throwable;
 
 final class EnvironmentInspector
 {
+    public const MINIMUM_SQLITE_VERSION = '3.26.0';
+
     private const REQUIRED_EXTENSIONS = [
         'pdo_sqlite', 'sqlite3', 'mbstring', 'dom', 'session', 'filter', 'hash', 'fileinfo', 'zip',
     ];
@@ -20,7 +22,7 @@ final class EnvironmentInspector
     }
 
     /** @param array<string, mixed> $server
-     *  @return array{php: bool, extensions: array<string, bool>, recommended_extensions: array<string, bool>, optional_extensions: array<string, bool>, https: bool, requirements_met: bool}
+     *  @return array{php: bool, extensions: array<string, bool>, recommended_extensions: array<string, bool>, optional_extensions: array<string, bool>, pdo_sqlite_version: ?string, sqlite3_version: ?string, minimum_sqlite_version: string, sqlite_version_supported: bool, https: bool, requirements_met: bool}
      */
     public function basic(array $server): array
     {
@@ -29,14 +31,29 @@ final class EnvironmentInspector
             $extensions[$extension] = extension_loaded($extension);
         }
         $php = version_compare(PHP_VERSION, '8.3.0', '>=');
+        $pdoSqliteVersion = $this->pdoSqliteVersion($extensions['pdo_sqlite']);
+        $sqlite3Version = $this->sqlite3Version($extensions['sqlite3']);
+        $sqliteVersionSupported = $pdoSqliteVersion !== null
+            && $sqlite3Version !== null
+            && $this->supportsSqliteVersion($pdoSqliteVersion)
+            && $this->supportsSqliteVersion($sqlite3Version);
         return [
             'php' => $php,
             'extensions' => $extensions,
             'recommended_extensions' => ['zlib' => extension_loaded('zlib')],
             'optional_extensions' => ['gd' => extension_loaded('gd')],
+            'pdo_sqlite_version' => $pdoSqliteVersion,
+            'sqlite3_version' => $sqlite3Version,
+            'minimum_sqlite_version' => self::MINIMUM_SQLITE_VERSION,
+            'sqlite_version_supported' => $sqliteVersionSupported,
             'https' => $this->isHttps($server),
-            'requirements_met' => $php && !in_array(false, $extensions, true),
+            'requirements_met' => $php && !in_array(false, $extensions, true) && $sqliteVersionSupported,
         ];
+    }
+
+    public function supportsSqliteVersion(string $version): bool
+    {
+        return version_compare($version, self::MINIMUM_SQLITE_VERSION, '>=');
     }
 
     /** @param array<string, mixed> $server */
@@ -104,7 +121,7 @@ final class EnvironmentInspector
     }
 
     /** @param array<string, mixed> $server
-     *  @return array{directory: bool, file: bool, sqlite: bool, wal: bool, lock: bool, cleanup: bool}
+     *  @return array{directory: bool, file: bool, sqlite: bool, crud: bool, upsert: bool, json: bool, foreign_key: bool, wal: bool, lock: bool, cleanup: bool}
      */
     public function inspectPrivatePath(string $path, array $server): array
     {
@@ -124,44 +141,95 @@ final class EnvironmentInspector
 
         $probe = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.install-probe-' . bin2hex(random_bytes(8));
         $databasePath = $probe . '.sqlite';
-        $result = ['directory' => true, 'file' => false, 'sqlite' => false, 'wal' => false, 'lock' => false, 'cleanup' => false];
+        $result = [
+            'directory' => true,
+            'file' => false,
+            'sqlite' => false,
+            'crud' => false,
+            'upsert' => false,
+            'json' => false,
+            'foreign_key' => false,
+            'wal' => false,
+            'lock' => false,
+            'cleanup' => false,
+        ];
         try {
             $payload = bin2hex(random_bytes(16));
             if (file_put_contents($probe, $payload, LOCK_EX) === false || file_get_contents($probe) !== $payload) {
                 throw new InstallException('非公開領域でファイルの作成と読み取りができません。');
             }
             $result['file'] = true;
-            $first = new PDO('sqlite:' . $databasePath, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-            $first->exec('PRAGMA journal_mode = WAL');
-            $first->exec('CREATE TABLE lock_probe (id INTEGER PRIMARY KEY, value TEXT) STRICT');
-            $result['sqlite'] = true;
-            $result['wal'] = strtolower((string) $first->query('PRAGMA journal_mode')->fetchColumn()) === 'wal';
-            $second = new SQLite3($databasePath, SQLITE3_OPEN_READWRITE);
-            $second->busyTimeout(20);
-            $first->exec('BEGIN IMMEDIATE');
             try {
-                if (@$second->exec("INSERT INTO lock_probe (value) VALUES ('test')") === false) {
-                    $result['lock'] = true;
+                $first = new PDO('sqlite:' . $databasePath, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                $first->exec('PRAGMA foreign_keys = ON');
+                $first->exec('PRAGMA journal_mode = WAL');
+                $first->exec('CREATE TABLE parent_probe (id INTEGER PRIMARY KEY)');
+                $first->exec(
+                    'CREATE TABLE lock_probe ('
+                    . 'id INTEGER PRIMARY KEY, value TEXT NOT NULL, parent_id INTEGER NOT NULL '
+                    . 'REFERENCES parent_probe(id))',
+                );
+                $result['sqlite'] = true;
+                $result['wal'] = strtolower((string) $first->query('PRAGMA journal_mode')->fetchColumn()) === 'wal';
+
+                $first->exec('INSERT INTO parent_probe (id) VALUES (1)');
+                $first->exec("INSERT INTO lock_probe (id, value, parent_id) VALUES (1, 'created', 1)");
+                $created = $first->query('SELECT value FROM lock_probe WHERE id = 1')->fetchColumn() === 'created';
+                $first->exec('DELETE FROM lock_probe WHERE id = 1');
+                $deleted = (int) $first->query('SELECT COUNT(*) FROM lock_probe')->fetchColumn() === 0;
+                $result['crud'] = $created && $deleted;
+
+                $first->exec("INSERT INTO lock_probe (id, value, parent_id) VALUES (1, 'before', 1)");
+                $first->exec(
+                    "INSERT INTO lock_probe (id, value, parent_id) VALUES (1, 'after', 1) "
+                    . 'ON CONFLICT (id) DO UPDATE SET value = excluded.value',
+                );
+                $result['upsert'] = $first->query('SELECT value FROM lock_probe WHERE id = 1')->fetchColumn() === 'after';
+                $result['json'] = (int) $first->query("SELECT json_valid('{\"probe\":true}')")->fetchColumn() === 1;
+
+                try {
+                    $first->exec("INSERT INTO lock_probe (id, value, parent_id) VALUES (2, 'invalid', 999)");
+                } catch (PDOException) {
+                    $result['foreign_key'] = true;
                 }
-            } catch (Throwable) {
-                $result['lock'] = true;
-            } finally {
-                $first->exec('ROLLBACK');
-                $second->close();
+
+                $second = new SQLite3($databasePath, SQLITE3_OPEN_READWRITE);
+                $second->busyTimeout(20);
+                $first->exec('BEGIN IMMEDIATE');
+                try {
+                    if (@$second->exec("INSERT INTO lock_probe (id, value, parent_id) VALUES (3, 'locked', 1)") === false) {
+                        $result['lock'] = true;
+                    }
+                } catch (Throwable) {
+                    $result['lock'] = true;
+                } finally {
+                    $first->exec('ROLLBACK');
+                    $second->close();
+                }
+
+                if (in_array(false, [
+                    $result['crud'],
+                    $result['upsert'],
+                    $result['json'],
+                    $result['foreign_key'],
+                    $result['wal'],
+                    $result['lock'],
+                ], true)) {
+                    throw new PDOException('Required SQLite operation did not pass its diagnostic.');
+                }
+            } catch (Throwable $error) {
+                throw new InstallException('SQLiteの診断に失敗しました。', [], $error);
             }
-            if (!$result['wal'] || !$result['lock']) {
-                throw new InstallException('SQLiteのWALまたはロック動作を確認できません。');
-            }
-        } catch (PDOException $error) {
-            throw new InstallException('SQLiteの診断に失敗しました。', [], $error);
         } finally {
             unset($first);
             @unlink($probe);
             @unlink($databasePath);
             @unlink($databasePath . '-wal');
             @unlink($databasePath . '-shm');
+            @unlink($databasePath . '-journal');
             $result['cleanup'] = !file_exists($probe) && !file_exists($databasePath)
-                && !file_exists($databasePath . '-wal') && !file_exists($databasePath . '-shm');
+                && !file_exists($databasePath . '-wal') && !file_exists($databasePath . '-shm')
+                && !file_exists($databasePath . '-journal');
             if ($createdRoot) {
                 @rmdir($path);
             }
@@ -170,6 +238,34 @@ final class EnvironmentInspector
             throw new InstallException('診断用ファイルを削除できません。');
         }
         return $result;
+    }
+
+    private function pdoSqliteVersion(bool $extensionLoaded): ?string
+    {
+        if (!$extensionLoaded) {
+            return null;
+        }
+        try {
+            $version = (new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]))
+                ->query('SELECT sqlite_version()')
+                ->fetchColumn();
+            return is_string($version) && $version !== '' ? $version : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function sqlite3Version(bool $extensionLoaded): ?string
+    {
+        if (!$extensionLoaded) {
+            return null;
+        }
+        try {
+            $version = SQLite3::version()['versionString'] ?? null;
+            return is_string($version) && $version !== '' ? $version : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** @param array<string, mixed> $server */

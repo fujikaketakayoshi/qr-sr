@@ -381,7 +381,7 @@ final class BackupManager
 
     private function backupSpotTokenKey(PDO $database): ?string
     {
-        $table = $database->query("SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn();
+        $table = $database->query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn();
         if ($table === false) {
             return null;
         }
@@ -549,7 +549,7 @@ final class BackupManager
     private function tableNames(PDO $database): array
     {
         return array_values(array_map('strval', $database->query(
-            "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
         )->fetchAll(PDO::FETCH_COLUMN)));
     }
 

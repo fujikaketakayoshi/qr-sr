@@ -6,13 +6,13 @@ CREATE TABLE admins (
     last_login_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
-) STRICT;
+);
 
 CREATE TABLE app_settings (
     setting_key TEXT PRIMARY KEY,
     setting_value TEXT NOT NULL,
     updated_at TEXT NOT NULL
-) STRICT;
+);
 
 CREATE TABLE events (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -31,7 +31,7 @@ CREATE TABLE events (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     CHECK (starts_at < ends_at)
-) STRICT;
+);
 
 CREATE TABLE application_fields (
     id INTEGER PRIMARY KEY,
@@ -40,7 +40,7 @@ CREATE TABLE application_fields (
     is_required INTEGER NOT NULL DEFAULT 0 CHECK (is_required IN (0, 1)),
     display_order INTEGER NOT NULL,
     CHECK (is_required = 0 OR is_enabled = 1)
-) STRICT;
+);
 
 CREATE TABLE spots (
     id INTEGER PRIMARY KEY,
@@ -51,7 +51,7 @@ CREATE TABLE spots (
     is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
-) STRICT;
+);
 
 CREATE TABLE participants (
     id INTEGER PRIMARY KEY,
@@ -62,7 +62,7 @@ CREATE TABLE participants (
     completed_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
-) STRICT;
+);
 
 CREATE TABLE stamp_acquisitions (
     id INTEGER PRIMARY KEY,
@@ -71,7 +71,7 @@ CREATE TABLE stamp_acquisitions (
     acquired_at TEXT NOT NULL,
     ip_hash TEXT,
     UNIQUE (participant_id, spot_id)
-) STRICT;
+);
 
 CREATE TABLE applications (
     id INTEGER PRIMARY KEY,
@@ -84,7 +84,7 @@ CREATE TABLE applications (
     privacy_accepted_at TEXT NOT NULL,
     submitted_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
-) STRICT;
+);
 
 CREATE TABLE audit_logs (
     id INTEGER PRIMARY KEY,
@@ -97,7 +97,7 @@ CREATE TABLE audit_logs (
     context_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL,
     CHECK (json_valid(context_json))
-) STRICT;
+);
 
 CREATE TABLE backup_operations (
     id INTEGER PRIMARY KEY,
@@ -110,7 +110,7 @@ CREATE TABLE backup_operations (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     expires_at TEXT
-) STRICT;
+);
 
 CREATE INDEX stamp_acquisitions_spot_id_index ON stamp_acquisitions (spot_id);
 CREATE INDEX stamp_acquisitions_acquired_at_index ON stamp_acquisitions (acquired_at);

@@ -10,6 +10,21 @@ use QrRally\Install\InstallInput;
 
 final class EnvironmentInspectorTest extends TestCase
 {
+    public function testRequiresSqlite326OrLater(): void
+    {
+        $inspector = new EnvironmentInspector('/srv/qr-sr');
+
+        self::assertFalse($inspector->supportsSqliteVersion('3.25.3'));
+        self::assertTrue($inspector->supportsSqliteVersion('3.26.0'));
+        self::assertTrue($inspector->supportsSqliteVersion('3.51.0'));
+
+        $diagnostics = $inspector->basic(['HTTPS' => 'on']);
+        self::assertNotNull($diagnostics['pdo_sqlite_version']);
+        self::assertNotNull($diagnostics['sqlite3_version']);
+        self::assertSame('3.26.0', $diagnostics['minimum_sqlite_version']);
+        self::assertTrue($diagnostics['sqlite_version_supported']);
+    }
+
     public function testSuggestsSubdirectoryUrlAndPrivateSibling(): void
     {
         $inspector = new EnvironmentInspector('/srv/public_html/qr-sr');
