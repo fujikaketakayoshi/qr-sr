@@ -98,6 +98,7 @@ button:disabled { cursor: not-allowed; opacity: .35; }
 .spot-number { color: #63716d; font-size: .8rem; font-weight: 800; }
 .stamp-mark { position: absolute; right: .7rem; bottom: .5rem; display: grid; place-items: center; width: 4rem; height: 4rem; color: #b42318; border: .25rem double #b42318; border-radius: 50%; font-weight: 900; transform: rotate(-12deg); opacity: .82; }
 .spot-result { text-align: center; }
+.spot-result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
 .result-message { padding: 1rem; border-radius: .6rem; font-weight: 800; }
 .result-success { color: #075c42; background: #dff6ed; }
 .result-notice { color: #744c00; background: #fff3cc; }

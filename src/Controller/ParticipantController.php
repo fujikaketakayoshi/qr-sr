@@ -6,6 +6,7 @@ namespace QrRally\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use QrRally\Domain\ApplicationEligibility;
 use QrRally\Domain\EventStatus;
 use QrRally\Http\Request;
 use QrRally\Http\Response;
@@ -158,8 +159,16 @@ final class ParticipantController
         if ($completed) {
             $message .= ' 達成おめでとうございます！';
         }
+        $showApplicationLink = ApplicationEligibility::canApply($event, $completed);
 
-        return $this->spotResult($event, $participant, $spot, $message, $result === 'duplicate' ? 'notice' : 'success');
+        return $this->spotResult(
+            $event,
+            $participant,
+            $spot,
+            $message,
+            $result === 'duplicate' ? 'notice' : 'success',
+            $showApplicationLink,
+        );
     }
 
     public function notices(): Response
@@ -177,14 +186,29 @@ final class ParticipantController
             'spots' => $this->participants->stampBoard((int) $participant['id']),
             'acquisitionCount' => $this->participants->acquisitionCount((int) $participant['id']),
             'completed' => $completed,
+            'showApplicationLink' => ApplicationEligibility::canApply($event, $completed),
             'eventStatus' => $this->eventStatus($event),
         ]);
     }
 
     /** @param array<string, mixed>|null $event @param array<string, mixed> $participant @param array<string, mixed> $spot */
-    private function spotResult(?array $event, array $participant, array $spot, string $message, string $kind): Response
+    private function spotResult(
+        ?array $event,
+        array $participant,
+        array $spot,
+        string $message,
+        string $kind,
+        bool $showApplicationLink = false,
+    ): Response
     {
-        return $this->view('participant/spot.php', compact('event', 'participant', 'spot', 'message', 'kind'));
+        return $this->view('participant/spot.php', compact(
+            'event',
+            'participant',
+            'spot',
+            'message',
+            'kind',
+            'showApplicationLink',
+        ));
     }
 
     /** @return array<string, mixed>|null */

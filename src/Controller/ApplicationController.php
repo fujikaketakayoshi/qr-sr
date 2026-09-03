@@ -7,6 +7,7 @@ namespace QrRally\Controller;
 use DateTimeImmutable;
 use DateTimeZone;
 use QrRally\Auth\AdminAuth;
+use QrRally\Domain\ApplicationEligibility;
 use QrRally\Domain\ApplicationInput;
 use QrRally\Domain\ApplicationDefaults;
 use QrRally\Domain\ApplicationValidator;
@@ -94,7 +95,7 @@ final class ApplicationController
         if ($blocked !== null) return $blocked;
         $existing = $this->applications->findForParticipant((int) $participant['id']);
         $fields = $this->applications->fields();
-        if (!$this->canApply($event, $participant)) return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields'), 403);
+        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null)) return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields'), 403);
         if ($input === null) {
             $confirmed = $_SESSION['_application_confirmed'] ?? null;
             if (is_array($confirmed) && ($confirmed['participant_id'] ?? null) === (int) $participant['id']) {
@@ -109,7 +110,7 @@ final class ApplicationController
         if (!$this->csrf->verify($request->input('_csrf'))) return $this->participantCsrfFailure();
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
-        if (!$this->canApply($event, $participant)) {
+        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null)) {
             $existing = $this->applications->findForParticipant((int) $participant['id']);
             $fields = $this->applications->fields();
             return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields'), 403);
@@ -129,7 +130,7 @@ final class ApplicationController
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
         $confirmed = $_SESSION['_application_confirmed'] ?? null;
-        if (!$this->canApply($event, $participant) || !is_array($confirmed) || ($confirmed['participant_id'] ?? null) !== (int) $participant['id']) return Response::redirect($this->urls->to('application'));
+        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null) || !is_array($confirmed) || ($confirmed['participant_id'] ?? null) !== (int) $participant['id']) return Response::redirect($this->urls->to('application'));
         $input = new ApplicationInput((array) $confirmed['values'], true);
         $fields = $this->applications->fields();
         $existing = $this->applications->findForParticipant((int) $participant['id']);
@@ -146,7 +147,7 @@ final class ApplicationController
         if ($blocked !== null) return $blocked;
         $application = $this->applications->findForParticipant((int) $participant['id']);
         if ($application === null) return Response::redirect($this->urls->to('application'));
-        return $this->participantView('participant/application-complete.php', ['event' => $event, 'participant' => $participant, 'application' => $application, 'fields' => $this->applications->fields(), 'editable' => !$this->deadlinePassed($event)]);
+        return $this->participantView('participant/application-complete.php', ['event' => $event, 'participant' => $participant, 'application' => $application, 'fields' => $this->applications->fields(), 'editable' => !ApplicationEligibility::deadlinePassed($event)]);
     }
 
     public function report(): Response
@@ -176,8 +177,6 @@ final class ApplicationController
     }
 
     private function applicationInput(Request $request): ApplicationInput { return new ApplicationInput(['name'=>$request->input('name'),'email'=>$request->input('email'),'email_confirmation'=>$request->input('email_confirmation'),'address'=>$request->input('address'),'phone'=>$request->input('phone')], $request->boolean('privacy_accepted')); }
-    private function canApply(array $event, array $participant): bool { return (bool) $event['application_enabled'] && $participant['completed_at'] !== null && !$this->deadlinePassed($event); }
-    private function deadlinePassed(array $event): bool { $deadline = $event['application_deadline_at'] ?: $event['ends_at']; return new DateTimeImmutable('now', new DateTimeZone('UTC')) > new DateTimeImmutable((string) $deadline); }
     private function parseLocal(string $value): ?DateTimeImmutable { $date=DateTimeImmutable::createFromFormat('!Y-m-d\TH:i',$value,new DateTimeZone($this->timezone)); $e=DateTimeImmutable::getLastErrors(); return $date!==false&&($e===false||($e['warning_count']===0&&$e['error_count']===0))?$date:null; }
     /** @return array{0:array<string,mixed>,1:array<string,mixed>,2:?Response} */
     private function participantContext(Request $request): array { $event=$this->events->find(); $token=$request->cookie(self::COOKIE_NAME); $participant=$token===null?null:$this->participants->findByToken($token); if($event===null||$participant===null)return [$event??[],$participant??[],Response::redirect($this->urls->to(''))]; return [$event,$participant,null]; }

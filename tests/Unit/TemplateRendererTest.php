@@ -70,4 +70,37 @@ final class TemplateRendererTest extends TestCase
         self::assertStringContainsString('イベント入口へ戻る', $html);
         self::assertStringNotContainsString('管理者ログインへ戻る', $html);
     }
+
+    public function testCompletedSpotResultShowsApplicationAsPrimaryAction(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('participant/spot.php', [
+            'spot' => ['name' => 'スポット1', 'description' => '説明'],
+            'message' => 'スタンプを取得しました！ 達成おめでとうございます！',
+            'kind' => 'success',
+            'showApplicationLink' => true,
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('href="https://example.test/application"', $html);
+        self::assertStringContainsString('>応募フォームを開く</a>', $html);
+        self::assertStringContainsString('class="button secondary" href="https://example.test/"', $html);
+        self::assertStringContainsString('>スタンプ台紙を見る</a>', $html);
+    }
+
+    public function testSpotResultWithoutApplicationDoesNotShowApplicationLink(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('participant/spot.php', [
+            'spot' => ['name' => 'スポット1', 'description' => '説明'],
+            'message' => 'スタンプを取得しました！',
+            'kind' => 'success',
+            'showApplicationLink' => false,
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringNotContainsString('応募フォームを開く', $html);
+        self::assertStringContainsString('class="button" href="https://example.test/"', $html);
+        self::assertStringContainsString('>スタンプ台紙を見る</a>', $html);
+    }
 }
