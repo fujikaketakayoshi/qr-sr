@@ -103,4 +103,18 @@ final class TemplateRendererTest extends TestCase
         self::assertStringContainsString('class="button" href="https://example.test/"', $html);
         self::assertStringContainsString('>スタンプ台紙を見る</a>', $html);
     }
+
+    public function testLoginShowsRestoreCompletionMessageAndKeepsItOnSubmit(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('auth/login.php', [
+            'restored' => true,
+            'csrfToken' => 'test-token',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('バックアップの復元が完了しました。', $html);
+        self::assertStringContainsString('バックアップ作成時点の管理者パスワードでログインしてください。', $html);
+        self::assertStringContainsString('action="https://example.test/admin/login?restored=1"', $html);
+    }
 }

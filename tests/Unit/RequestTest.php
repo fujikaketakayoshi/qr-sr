@@ -23,4 +23,13 @@ final class RequestTest extends TestCase
 
         self::assertSame('/admin/event', $request->path('http://localhost/qr-sr/'));
     }
+
+    public function testReadsStringQueryValue(): void
+    {
+        $request = new Request(['REQUEST_METHOD' => 'GET'], ['restored' => ' 1 ', 'invalid' => ['1']]);
+
+        self::assertSame('1', $request->query('restored'));
+        self::assertSame('', $request->query('invalid'));
+        self::assertSame('fallback', $request->query('missing', 'fallback'));
+    }
 }

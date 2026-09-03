@@ -128,7 +128,7 @@ final class BackupController
             $this->states->write($state);
             $this->operations->record('restore', 'ready', $validated['archive_hash']);
             $this->logs->record('backup.restore.validate', 'admin', $this->auth->id(), 'success', ['file_hash' => $validated['archive_hash']]);
-            $this->flash->set('success', 'バックアップの検証が完了しました。内容を確認してください。');
+            $this->flash->set('success', 'バックアップの検証が完了しました。画面下部の「復元内容の確認」に進んで内容を確認してください。');
             return Response::redirect($this->urls->to('admin/backup'));
         } catch (Throwable $error) {
             $this->operations->record('restore', 'failed', '', $error->getMessage());

@@ -73,7 +73,7 @@ final class Application
             'POST /application/confirm' => $this->applications->confirm($request),
             'POST /application/submit' => $this->applications->submit($request),
             'GET /application/complete' => $this->applications->complete($request),
-            'GET /admin/login' => $this->admin->loginForm(),
+            'GET /admin/login' => $this->admin->loginForm($request),
             'POST /admin/login' => $this->admin->login($request),
             'POST /admin/logout' => $this->admin->logout($request),
             'GET /admin/password/reset' => $this->admin->resetForm(),

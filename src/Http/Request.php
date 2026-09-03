@@ -57,6 +57,13 @@ final class Request
         return is_string($value) ? trim($value) : $default;
     }
 
+    public function query(string $key, string $default = ''): string
+    {
+        $value = $this->query[$key] ?? $default;
+
+        return is_string($value) ? trim($value) : $default;
+    }
+
     public function boolean(string $key): bool
     {
         return isset($this->post[$key]) && in_array($this->post[$key], ['1', 'on', 'true'], true);

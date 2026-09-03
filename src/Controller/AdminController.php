@@ -42,13 +42,16 @@ final class AdminController
     ) {
     }
 
-    public function loginForm(): Response
+    public function loginForm(Request $request): Response
     {
         if ($this->auth->id() !== null) {
             return Response::redirect($this->urls->to('admin/'));
         }
 
-        return $this->view('auth/login.php', ['title' => '管理者ログイン'], false);
+        return $this->view('auth/login.php', [
+            'title' => '管理者ログイン',
+            'restored' => $request->query('restored') === '1',
+        ], false);
     }
 
     public function login(Request $request): Response
@@ -67,6 +70,7 @@ final class AdminController
                 'title' => '管理者ログイン',
                 'error' => $result['message'],
                 'email' => $request->input('email'),
+                'restored' => $request->query('restored') === '1',
             ], false, 422);
         }
 
