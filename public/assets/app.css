@@ -89,8 +89,17 @@ button:disabled { cursor: not-allowed; opacity: .35; }
 .participant-header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem max(1rem, calc((100% - 48rem) / 2)); background: #fff; border-bottom: 1px solid #dfe7e4; }
 .participant-main { width: min(calc(100% - 2rem), 48rem); margin: 1.5rem auto 4rem; }
 .participant-hero { margin-bottom: 1.5rem; }
+.participant-period { margin: 1rem 0; }
+.participant-period div { display: grid; gap: .35rem; }
+.participant-period dt { color: #63716d; font-size: .82rem; font-weight: 800; }
+.participant-period dd { margin: 0; font-weight: 700; }
 .completion { margin-top: 1.25rem; padding: 1rem; color: #075c42; background: #dff6ed; border: 2px solid #46a985; border-radius: .8rem; }
 .completion h2 { margin-top: 0; }
+.application-status { margin: 1rem 0; }
+.application-status dt { color: #477265; font-size: .82rem; font-weight: 800; }
+.application-status dd { margin: .25rem 0 0; overflow-wrap: anywhere; font-size: 1.15rem; font-weight: 900; letter-spacing: .04em; }
+.application-deadline { display: flex; flex-wrap: wrap; gap: .35rem .75rem; align-items: baseline; }
+.application-deadline span { font-weight: 700; }
 .stamp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 .stamp-card { position: relative; min-height: 8rem; overflow: hidden; padding: 1rem; background: #fff; border: 2px dashed #b8c5c1; border-radius: .8rem; }
 .stamp-card h3 { margin: .45rem 0; }

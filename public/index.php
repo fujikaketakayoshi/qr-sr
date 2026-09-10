@@ -147,9 +147,11 @@ $participantController = new ParticipantController(
     new EventRepository($database),
     $spotRepository,
     new ParticipantRepository($database, $participantToken),
+    new ApplicationRepository($database),
     $participantToken,
     $logs,
     $config->string('app_key'),
+    $config->string('timezone'),
     new ParticipantCookie(
         $config->bool('cookie_secure'),
         (string) (parse_url($config->string('base_url'), PHP_URL_PATH) ?: '/'),

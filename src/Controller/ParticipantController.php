@@ -11,6 +11,7 @@ use QrRally\Domain\EventStatus;
 use QrRally\Http\Request;
 use QrRally\Http\Response;
 use QrRally\Repository\AuditLogRepository;
+use QrRally\Repository\ApplicationRepository;
 use QrRally\Repository\EventRepository;
 use QrRally\Repository\ParticipantRepository;
 use QrRally\Repository\SpotRepository;
@@ -34,9 +35,11 @@ final class ParticipantController
         private readonly EventRepository $events,
         private readonly SpotRepository $spots,
         private readonly ParticipantRepository $participants,
+        private readonly ApplicationRepository $applications,
         private readonly ParticipantToken $tokens,
         private readonly AuditLogRepository $logs,
         private readonly string $appKey,
+        private readonly string $timezone,
         private readonly ParticipantCookie $participantCookie,
         private readonly TrafficMonitor $traffic,
     ) {
@@ -180,6 +183,8 @@ final class ParticipantController
     private function board(array $event, array $participant): Response
     {
         $completed = $this->participants->markCompletedIfEligible((int) $participant['id'], (int) $event['required_stamp_count']);
+        $application = $this->applications->findForParticipant((int) $participant['id']);
+        $applicationDeadlinePassed = ApplicationEligibility::deadlinePassed($event);
         return $this->view('participant/home.php', [
             'event' => $event,
             'participant' => $participant,
@@ -187,7 +192,13 @@ final class ParticipantController
             'acquisitionCount' => $this->participants->acquisitionCount((int) $participant['id']),
             'completed' => $completed,
             'showApplicationLink' => ApplicationEligibility::canApply($event, $completed),
+            'application' => $application,
+            'applicationEditable' => $application !== null && (bool) $event['application_enabled'] && !$applicationDeadlinePassed,
+            'applicationDeadlinePassed' => $applicationDeadlinePassed,
             'eventStatus' => $this->eventStatus($event),
+            'displayStartsAt' => $this->displayDate((string) $event['starts_at']),
+            'displayEndsAt' => $this->displayDate((string) $event['ends_at']),
+            'displayApplicationDeadline' => $this->displayDate((string) ($event['application_deadline_at'] ?: $event['ends_at'])),
         ]);
     }
 
@@ -222,6 +233,13 @@ final class ParticipantController
     private function eventStatus(array $event): EventStatus
     {
         return EventStatus::calculate((bool) $event['is_paused'], new DateTimeImmutable((string) $event['starts_at']), new DateTimeImmutable((string) $event['ends_at']), new DateTimeImmutable('now', new DateTimeZone('UTC')));
+    }
+
+    private function displayDate(string $date): string
+    {
+        return (new DateTimeImmutable($date))
+            ->setTimezone(new DateTimeZone($this->timezone))
+            ->format('Y年n月j日 H:i');
     }
 
     private function csrfFailure(): Response
