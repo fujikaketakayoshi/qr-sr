@@ -58,6 +58,36 @@ final class TemplateRendererTest extends TestCase
         self::assertStringContainsString("document.getElementById('application_deadline_at').value = ''", $html);
     }
 
+    public function testBackupRestoreConfirmationShowsSpotCountFromManifest(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('admin/backup.php', [
+            'error' => null,
+            'event' => ['name' => 'テストイベント'],
+            'summary' => ['participants' => 9, 'applications' => 4],
+            'estimatedSize' => '1 MB',
+            'csrfToken' => 'test-token',
+            'manifest' => [
+                'created_at' => '2026-09-11T12:00:00+00:00',
+                'product_version' => '0.1.0-dev',
+                'schema_version' => 1,
+                'source_base_url' => 'https://example.test/',
+                'table_counts' => [
+                    'spots' => 3,
+                    'participants' => 2,
+                    'applications' => 1,
+                ],
+            ],
+            'state' => ['status' => 'ready'],
+            'sourceUrlDiffers' => false,
+            'operations' => [],
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('<dt>スポット</dt><dd>3件</dd>', $html);
+        self::assertStringNotContainsString('<dt>スポット</dt><dd>9件</dd>', $html);
+    }
+
     public function testParticipantCsrfFailureLinksBackToEventEntry(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');

@@ -43,6 +43,7 @@
             <div><dt>製品バージョン</dt><dd><?= htmlspecialchars((string) $manifest['product_version'], ENT_QUOTES, 'UTF-8') ?></dd></div>
             <div><dt>スキーマバージョン</dt><dd><?= htmlspecialchars((string) $manifest['schema_version'], ENT_QUOTES, 'UTF-8') ?></dd></div>
             <div><dt>バックアップ元URL</dt><dd><?= htmlspecialchars((string) $manifest['source_base_url'], ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div><dt>スポット</dt><dd><?= (int) ($manifest['table_counts']['spots'] ?? 0) ?>件</dd></div>
             <div><dt>参加者</dt><dd><?= (int) ($manifest['table_counts']['participants'] ?? 0) ?>人</dd></div>
             <div><dt>応募者</dt><dd><?= (int) ($manifest['table_counts']['applications'] ?? 0) ?>人</dd></div>
         </dl>
