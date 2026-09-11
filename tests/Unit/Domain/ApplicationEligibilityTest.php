@@ -40,4 +40,38 @@ final class ApplicationEligibilityTest extends TestCase
             ApplicationEligibility::canApply($event, $completed, new DateTimeImmutable($now)),
         );
     }
+
+    public function testShowsDisabledMessageBeforeDeadline(): void
+    {
+        $event = [
+            'application_enabled' => false,
+            'application_deadline_at' => '2026-09-03T13:00:00Z',
+            'ends_at' => '2026-09-03T13:00:00Z',
+        ];
+
+        self::assertSame(
+            '現在、応募受付は停止されているため、内容は変更できません。',
+            ApplicationEligibility::editUnavailableMessage(
+                $event,
+                new DateTimeImmutable('2026-09-03T12:00:00Z'),
+            ),
+        );
+    }
+
+    public function testDeadlineMessageTakesPriorityWhenApplicationsAreDisabled(): void
+    {
+        $event = [
+            'application_enabled' => false,
+            'application_deadline_at' => '2026-09-03T11:59:59Z',
+            'ends_at' => '2026-09-03T13:00:00Z',
+        ];
+
+        self::assertSame(
+            '応募締切を過ぎているため、内容は変更できません。',
+            ApplicationEligibility::editUnavailableMessage(
+                $event,
+                new DateTimeImmutable('2026-09-03T12:00:00Z'),
+            ),
+        );
+    }
 }

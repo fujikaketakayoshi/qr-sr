@@ -25,4 +25,17 @@ final class ApplicationEligibility
 
         return $now > new DateTimeImmutable((string) $deadline);
     }
+
+    /** @param array<string, mixed> $event */
+    public static function editUnavailableMessage(array $event, ?DateTimeImmutable $now = null): string
+    {
+        if (self::deadlinePassed($event, $now)) {
+            return '応募締切を過ぎているため、内容は変更できません。';
+        }
+        if (!(bool) $event['application_enabled']) {
+            return '現在、応募受付は停止されているため、内容は変更できません。';
+        }
+
+        return '現在、応募内容は変更できません。';
+    }
 }

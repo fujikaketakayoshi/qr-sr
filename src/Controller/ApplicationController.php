@@ -95,7 +95,10 @@ final class ApplicationController
         if ($blocked !== null) return $blocked;
         $existing = $this->applications->findForParticipant((int) $participant['id']);
         $fields = $this->applications->fields();
-        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null)) return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields'), 403);
+        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null)) {
+            $editUnavailableMessage = $this->editUnavailableMessage($event);
+            return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields', 'editUnavailableMessage'), 403);
+        }
         if ($input === null) {
             $confirmed = $_SESSION['_application_confirmed'] ?? null;
             if (is_array($confirmed) && ($confirmed['participant_id'] ?? null) === (int) $participant['id']) {
@@ -113,7 +116,8 @@ final class ApplicationController
         if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null)) {
             $existing = $this->applications->findForParticipant((int) $participant['id']);
             $fields = $this->applications->fields();
-            return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields'), 403);
+            $editUnavailableMessage = $this->editUnavailableMessage($event);
+            return $this->participantView('participant/application-unavailable.php', compact('event', 'participant', 'existing', 'fields', 'editUnavailableMessage'), 403);
         }
         $input = $this->applicationInput($request);
         $fields = $this->applications->fields();
@@ -147,7 +151,15 @@ final class ApplicationController
         if ($blocked !== null) return $blocked;
         $application = $this->applications->findForParticipant((int) $participant['id']);
         if ($application === null) return Response::redirect($this->urls->to('application'));
-        return $this->participantView('participant/application-complete.php', ['event' => $event, 'participant' => $participant, 'application' => $application, 'fields' => $this->applications->fields(), 'editable' => !ApplicationEligibility::deadlinePassed($event)]);
+        $editable = ApplicationEligibility::canApply($event, $participant['completed_at'] !== null);
+        return $this->participantView('participant/application-complete.php', [
+            'event' => $event,
+            'participant' => $participant,
+            'application' => $application,
+            'fields' => $this->applications->fields(),
+            'editable' => $editable,
+            'editUnavailableMessage' => $editable ? '' : $this->editUnavailableMessage($event),
+        ]);
     }
 
     public function report(): Response
@@ -177,6 +189,11 @@ final class ApplicationController
     }
 
     private function applicationInput(Request $request): ApplicationInput { return new ApplicationInput(['name'=>$request->input('name'),'email'=>$request->input('email'),'email_confirmation'=>$request->input('email_confirmation'),'address'=>$request->input('address'),'phone'=>$request->input('phone')], $request->boolean('privacy_accepted')); }
+    /** @param array<string, mixed> $event */
+    private function editUnavailableMessage(array $event): string
+    {
+        return ApplicationEligibility::editUnavailableMessage($event);
+    }
     private function parseLocal(string $value): ?DateTimeImmutable { $date=DateTimeImmutable::createFromFormat('!Y-m-d\TH:i',$value,new DateTimeZone($this->timezone)); $e=DateTimeImmutable::getLastErrors(); return $date!==false&&($e===false||($e['warning_count']===0&&$e['error_count']===0))?$date:null; }
     /** @return array{0:array<string,mixed>,1:array<string,mixed>,2:?Response} */
     private function participantContext(Request $request): array { $event=$this->events->find(); $token=$request->cookie(self::COOKIE_NAME); $participant=$token===null?null:$this->participants->findByToken($token); if($event===null||$participant===null)return [$event??[],$participant??[],Response::redirect($this->urls->to(''))]; return [$event,$participant,null]; }

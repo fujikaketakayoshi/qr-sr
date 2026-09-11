@@ -186,6 +186,50 @@ final class TemplateRendererTest extends TestCase
         self::assertStringNotContainsString('応募締切', $html);
     }
 
+    public function testApplicationUnavailableShowsSuppliedEditReason(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('participant/application-unavailable.php', [
+            'event' => ['application_enabled' => false],
+            'participant' => ['completed_at' => '2026-09-03T12:00:00Z'],
+            'existing' => [
+                'application_number' => 'ABC123',
+                'name' => '参加者',
+            ],
+            'fields' => [[
+                'is_enabled' => 1,
+                'field_type' => 'name',
+            ]],
+            'editUnavailableMessage' => '現在、応募受付は停止されているため、内容は変更できません。',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('ABC123', $html);
+        self::assertStringContainsString('現在、応募受付は停止されているため、内容は変更できません。', $html);
+        self::assertStringNotContainsString('応募締切を過ぎているため', $html);
+    }
+
+    public function testApplicationCompleteShowsSuppliedReasonInsteadOfEditLink(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('participant/application-complete.php', [
+            'application' => [
+                'application_number' => 'ABC123',
+                'name' => '参加者',
+            ],
+            'fields' => [[
+                'is_enabled' => 1,
+                'field_type' => 'name',
+            ]],
+            'editable' => false,
+            'editUnavailableMessage' => '現在、応募受付は停止されているため、内容は変更できません。',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('現在、応募受付は停止されているため、内容は変更できません。', $html);
+        self::assertStringNotContainsString('応募内容を編集', $html);
+    }
+
     public function testCompletedSpotResultShowsApplicationAsPrimaryAction(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
