@@ -63,12 +63,15 @@ $sqliteResult = static function (?string $version) use ($diagnostics, $h): strin
         <div><dt>バックアップ作成日時</dt><dd><?= $h((string) $restoreState['manifest']['created_at']) ?></dd></div>
         <div><dt>移転元URL</dt><dd><?= $h((string) $restoreState['manifest']['source_base_url']) ?></dd></div>
         <div><dt>新しいURL</dt><dd><?= $h($values['base_url']) ?></dd></div>
+        <div><dt>スポット</dt><dd><?= (int) ($restoreState['manifest']['table_counts']['spots'] ?? 0) ?>件</dd></div>
+        <div><dt>参加者</dt><dd><?= (int) ($restoreState['manifest']['table_counts']['participants'] ?? 0) ?>人</dd></div>
+        <div><dt>応募者</dt><dd><?= (int) ($restoreState['manifest']['table_counts']['applications'] ?? 0) ?>人</dd></div>
         <?php foreach (($restoreState['path_diagnostics'] ?? []) as $item => $passed): ?>
             <div><dt>非公開領域: <?= $h($diagnosticLabels[$item] ?? $item) ?></dt><dd><?= $passed ? 'OK' : 'NG' ?></dd></div>
         <?php endforeach; ?>
     </dl>
     <?php if ((string) $restoreState['manifest']['source_base_url'] !== $values['base_url']): ?>
-        <p class="warning-text"><strong>ベースURLが変わります。</strong>イベント入口とすべてのスポットのQRコードは、移転先ではURLが変わります。移転後に新しい管理画面から再印刷し、印刷・掲示・配布済みのものをすべて交換してください。</p>
+        <p class="error" role="alert"><strong>ベースURLが変わります。</strong>イベント入口とすべてのスポットのQRコードは、移転先ではURLが変わります。移転後に新しい管理画面から再印刷し、印刷・掲示・配布済みのものをすべて交換してください。</p>
     <?php endif; ?>
     <form method="post" action="">
         <input type="hidden" name="_csrf" value="<?= $h($csrf) ?>">

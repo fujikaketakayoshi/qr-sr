@@ -88,6 +88,64 @@ final class TemplateRendererTest extends TestCase
         self::assertStringNotContainsString('<dt>スポット</dt><dd>9件</dd>', $html);
     }
 
+    public function testInstallRestoreConfirmationShowsBackupCountsAndCriticalUrlWarning(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('install/index.php', [
+            'diagnostics' => [
+                'php' => true,
+                'extensions' => [],
+                'minimum_sqlite_version' => '3.26.0',
+                'pdo_sqlite_version' => '3.26.0',
+                'sqlite3_version' => '3.26.0',
+                'recommended_extensions' => [],
+                'optional_extensions' => [],
+                'https' => true,
+                'requirements_met' => true,
+            ],
+            'values' => [
+                'base_url' => 'https://new.example/qr-sr/',
+                'environment' => 'production',
+                'timezone' => 'Asia/Tokyo',
+                'private_path' => '/private/qr-sr',
+                'admin_email' => '',
+            ],
+            'errors' => [],
+            'csrf' => 'test-token',
+            'restoreState' => [
+                'manifest' => [
+                    'created_at' => '2026-09-11T12:00:00+00:00',
+                    'source_base_url' => 'https://old.example/',
+                    'table_counts' => [
+                        'spots' => 3,
+                        'participants' => 3,
+                        'applications' => 1,
+                    ],
+                ],
+                'path_diagnostics' => [],
+            ],
+        ]);
+
+        self::assertStringContainsString('<dt>スポット</dt><dd>3件</dd>', $html);
+        self::assertStringContainsString('<dt>参加者</dt><dd>3人</dd>', $html);
+        self::assertStringContainsString('<dt>応募者</dt><dd>1人</dd>', $html);
+        self::assertStringContainsString('class="error" role="alert"', $html);
+        self::assertStringContainsString('すべて交換してください', $html);
+    }
+
+    public function testInstallRestoreCompletionUsesCriticalUrlWarning(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('install/restore-complete.php', [
+            'sourceBaseUrl' => 'https://old.example/',
+            'baseUrl' => 'https://new.example/qr-sr/',
+            'loginUrl' => 'https://new.example/qr-sr/admin/login',
+        ]);
+
+        self::assertStringContainsString('class="error" role="alert"', $html);
+        self::assertStringContainsString('ベースURLが変わりました', $html);
+    }
+
     public function testParticipantCsrfFailureLinksBackToEventEntry(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
