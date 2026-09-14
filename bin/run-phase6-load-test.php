@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use QrRally\Config\Config;
+use QrRally\Backup\BackupManager;
 use QrRally\Database\ConnectionFactory;
 use QrRally\Database\Migrator;
 use QrRally\Repository\ApplicationRepository;
@@ -18,6 +19,25 @@ if (PHP_SAPI !== 'cli') {
 $root = dirname(__DIR__);
 require $root . '/vendor/autoload.php';
 
+$options = getopt('', ['create-backup', 'keep-database', 'output-directory:', 'help']);
+if (array_key_exists('help', $options)) {
+    fwrite(STDOUT, implode("\n", [
+        'Usage: php bin/run-phase6-load-test.php [options]',
+        '',
+        '  --create-backup          最大想定データのバックアップZIPを保存する',
+        '  --keep-database          最大想定データのSQLite DBを保存する',
+        '  --output-directory=PATH  レポートと成果物を保存する絶対パス',
+        '  --help                   このヘルプを表示する',
+        '',
+    ]));
+    exit(0);
+}
+$createBackup = array_key_exists('create-backup', $options);
+$keepDatabase = array_key_exists('keep-database', $options);
+$outputDirectory = isset($options['output-directory']) && is_string($options['output-directory'])
+    ? $options['output-directory']
+    : $root . '/output/phase6';
+
 try {
     $config = Config::load($root . '/config/app.php');
     if ($config->isProduction() || !$config->bool('allow_development_tools')) {
@@ -26,6 +46,11 @@ try {
 
     $normalDatabasePath = $config->string('database_path');
     $normalHashBefore = is_file($normalDatabasePath) ? hash_file('sha256', $normalDatabasePath) : null;
+    assertSafeOutputDirectory($outputDirectory);
+    if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0700, true) && !is_dir($outputDirectory)) {
+        throw new RuntimeException('測定結果の保存先を作成できません。');
+    }
+    $name = 'load-test-' . gmdate('Ymd-His');
     $testDirectory = sys_get_temp_dir() . '/qr-rally-phase6-' . gmdate('Ymd-His') . '-' . bin2hex(random_bytes(4));
     if (!mkdir($testDirectory, 0700, true)) {
         throw new RuntimeException('負荷試験用一時ディレクトリを作成できません。');
@@ -38,13 +63,20 @@ try {
     $measure = static function (string $name, Closure $operation) use (&$measurements): mixed {
         $started = hrtime(true);
         $result = $operation();
-        $measurements[$name] = round((hrtime(true) - $started) / 1_000_000, 3);
+        $measurements[$name] = number_format((hrtime(true) - $started) / 1_000_000, 3, '.', '');
         return $result;
     };
 
     $measure('seed_ms', static function () use ($database): void {
         $database->beginTransaction();
         try {
+            $database->prepare(
+                "INSERT INTO admins (email,password_hash,recovery_key_hash,created_at,updated_at) "
+                . "VALUES ('phase9-load-test@example.invalid',:password_hash,:recovery_key_hash,'now','now')",
+            )->execute([
+                'password_hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
+                'recovery_key_hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
+            ]);
             $database->exec(
                 "INSERT INTO events (id,name,starts_at,ends_at,required_stamp_count,application_enabled,created_at,updated_at) "
                 . "VALUES (1,'フェーズ6負荷試験','2026-01-01T00:00:00Z','2030-01-01T00:00:00Z',20,1,'now','now')",
@@ -127,16 +159,43 @@ try {
     $databaseSize = filesize($databasePath);
     unset($database);
 
+    $backup = null;
+    if ($createBackup) {
+        $backup = $measure('backup_create_ms', static fn (): array => (new BackupManager(
+            $databasePath,
+            $testDirectory . '/backups',
+            $config->string('base_url'),
+            $config->int('database_busy_timeout_ms'),
+            null,
+            $config->string('spot_token_key'),
+        ))->create());
+    }
+
+    $keptDatabasePath = null;
+    if ($keepDatabase) {
+        $keptDatabasePath = $outputDirectory . '/' . $name . '.sqlite';
+        copyArtifact($databasePath, $keptDatabasePath);
+    }
+    $keptBackupPath = null;
+    if ($backup !== null) {
+        $keptBackupPath = $outputDirectory . '/' . $name . '-backup.zip';
+        copyArtifact($backup['path'], $keptBackupPath);
+    }
+
     $normalHashAfter = is_file($normalDatabasePath) ? hash_file('sha256', $normalDatabasePath) : null;
     $report = [
         'generated_at' => gmdate('c'),
         'php_version' => PHP_VERSION,
-        'conditions' => ['spots' => 20, 'participants' => 2_000, 'acquisitions' => 40_000, 'applications' => 1_000, 'concurrent_workers' => 8],
+        'conditions' => ['admins' => 1, 'spots' => 20, 'participants' => 2_000, 'acquisitions' => 40_000, 'applications' => 1_000, 'concurrent_workers' => 8],
         'measurements_ms' => $measurements,
         'summary' => $summary,
         'all_participant_rows' => count($allRows),
         'applicant_rows' => count($applicantRows),
         'database_bytes' => $databaseSize,
+        'database_file' => $keptDatabasePath,
+        'backup_bytes' => $keptBackupPath !== null ? filesize($keptBackupPath) : null,
+        'backup_sha256' => $keptBackupPath !== null ? hash_file('sha256', $keptBackupPath) : null,
+        'backup_file' => $keptBackupPath,
         'concurrency' => $concurrency,
         'final_acquisition_count' => $finalAcquisitions,
         'integrity_check' => $integrity,
@@ -145,18 +204,21 @@ try {
         'normal_database_unchanged' => $normalHashBefore === $normalHashAfter,
     ];
 
-    $outputDirectory = $root . '/output/phase6';
-    if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0755, true) && !is_dir($outputDirectory)) {
-        throw new RuntimeException('測定結果の保存先を作成できません。');
-    }
-    $name = 'load-test-' . gmdate('Ymd-His');
     $jsonPath = $outputDirectory . '/' . $name . '.json';
     $markdownPath = $outputDirectory . '/' . $name . '.md';
     file_put_contents($jsonPath, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n");
     file_put_contents($markdownPath, markdownReport($report));
+    chmod($jsonPath, 0600);
+    chmod($markdownPath, 0600);
 
-    cleanupTemporaryDirectory($testDirectory);
+    removeTree($testDirectory);
     fwrite(STDOUT, "フェーズ6負荷試験が完了しました。\nJSON: {$jsonPath}\nMarkdown: {$markdownPath}\n");
+    if ($keptDatabasePath !== null) {
+        fwrite(STDOUT, "試験DB: {$keptDatabasePath}\n");
+    }
+    if ($keptBackupPath !== null) {
+        fwrite(STDOUT, "バックアップZIP: {$keptBackupPath}\n");
+    }
 } catch (Throwable $error) {
     fwrite(STDERR, '負荷試験に失敗しました: ' . $error->getMessage() . "\n");
     exit(1);
@@ -224,8 +286,10 @@ function markdownReport(array $report): string
         '# フェーズ6 負荷試験結果', '',
         '- 実行日時: ' . $report['generated_at'],
         '- PHP: ' . $report['php_version'],
-        '- スポット: 20件', '- 参加者: 2,000人', '- 取得履歴: 40,000件', '- 応募者: 1,000人',
+        '- 架空管理者: 1人', '- スポット: 20件', '- 参加者: 2,000人', '- 取得履歴: 40,000件', '- 応募者: 1,000人',
         '- DBサイズ: ' . number_format((int) $report['database_bytes']) . ' bytes',
+        '- バックアップZIP: ' . ($report['backup_bytes'] === null ? '未作成' : number_format((int) $report['backup_bytes']) . ' bytes'),
+        '- バックアップSHA-256: ' . ($report['backup_sha256'] ?? '未作成'),
         '- integrity_check: ' . $report['integrity_check'],
         '- 通常DB変更なし: ' . ($report['normal_database_unchanged'] ? 'はい' : 'いいえ'), '',
         '## 応答時間', '', '| 項目 | ms |', '|---|---:|',
@@ -244,12 +308,30 @@ function markdownReport(array $report): string
     return implode("\n", $lines);
 }
 
-function cleanupTemporaryDirectory(string $directory): void
+function assertSafeOutputDirectory(string $directory): void
 {
-    foreach (glob($directory . '/*') ?: [] as $file) {
-        if (is_file($file)) {
-            unlink($file);
+    if ($directory === '' || $directory[0] !== DIRECTORY_SEPARATOR
+        || in_array(rtrim($directory, DIRECTORY_SEPARATOR), ['', '/'], true)) {
+        throw new RuntimeException('測定結果の保存先には安全な絶対パスを指定してください。');
+    }
+}
+
+function copyArtifact(string $source, string $destination): void
+{
+    if (file_exists($destination) || !copy($source, $destination)) {
+        throw new RuntimeException('試験成果物を保存できません。既存ファイルと出力先を確認してください。');
+    }
+    chmod($destination, 0600);
+}
+
+function removeTree(string $directory): void
+{
+    foreach (scandir($directory) ?: [] as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
         }
+        $path = $directory . DIRECTORY_SEPARATOR . $entry;
+        is_dir($path) ? removeTree($path) : unlink($path);
     }
     rmdir($directory);
 }
