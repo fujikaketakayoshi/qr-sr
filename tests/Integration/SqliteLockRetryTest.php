@@ -14,6 +14,8 @@ use QrRally\Security\ParticipantToken;
 
 final class SqliteLockRetryTest extends TestCase
 {
+    private const PARTICIPANT_TOKEN = '11111111-1111-4111-8111-111111111111';
+
     private string $directory;
     private string $path;
     private PDO $writer;
@@ -27,7 +29,8 @@ final class SqliteLockRetryTest extends TestCase
         $this->writer = (new ConnectionFactory())->connect($this->path, 1);
         (new Migrator($this->writer, dirname(__DIR__, 2) . '/database/migrations'))->migrate();
         $this->writer->exec("INSERT INTO spots(public_token_hash,name,display_order,created_at,updated_at) VALUES('s','場所',1,'now','now')");
-        $this->writer->exec("INSERT INTO participants(token_hash,nickname,first_seen_at,last_seen_at,created_at,updated_at) VALUES('p','参加者','now','now','now','now')");
+        $tokenHash = hash('sha256', self::PARTICIPANT_TOKEN);
+        $this->writer->exec("INSERT INTO participants(token_hash,nickname,first_seen_at,last_seen_at,created_at,updated_at) VALUES('{$tokenHash}','参加者','now','now','now','now')");
         $this->locker = (new ConnectionFactory())->connect($this->path, 1);
     }
 
@@ -54,5 +57,22 @@ final class SqliteLockRetryTest extends TestCase
         self::assertSame('acquired', $participants->acquire(1, 1, null));
         self::assertSame([100], $delays);
         self::assertSame(1, (int) $this->writer->query('SELECT COUNT(*) FROM stamp_acquisitions')->fetchColumn());
+    }
+
+    public function testParticipantLookupRepreparesUpdateAfterLock(): void
+    {
+        $this->locker->exec('BEGIN IMMEDIATE');
+        $this->locker->exec("UPDATE participants SET nickname='ロック中' WHERE id=1");
+        $delays = [];
+        $retrier = new SqliteWriteRetrier([100, 250], function (int $milliseconds) use (&$delays): void {
+            $delays[] = $milliseconds;
+            $this->locker->exec('COMMIT');
+        });
+        $participants = new ParticipantRepository($this->writer, new ParticipantToken(), $retrier);
+
+        $participant = $participants->findByToken(self::PARTICIPANT_TOKEN);
+
+        self::assertSame(1, $participant['id'] ?? null);
+        self::assertSame([100], $delays);
     }
 }

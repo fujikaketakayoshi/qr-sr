@@ -23,11 +23,14 @@ final class ParticipantRepository
 
     public function create(string $token, string $nickname): int
     {
-        $statement = $this->database->prepare(
-            'INSERT INTO participants (token_hash, nickname, first_seen_at, last_seen_at, created_at, updated_at) '
-            . "VALUES (:hash, :nickname, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
-        );
-        $this->writes->run(fn () => $statement->execute(['hash' => $this->tokens->hash($token), 'nickname' => $nickname]));
+        $values = ['hash' => $this->tokens->hash($token), 'nickname' => $nickname];
+        $this->writes->run(function () use ($values): void {
+            $statement = $this->database->prepare(
+                'INSERT INTO participants (token_hash, nickname, first_seen_at, last_seen_at, created_at, updated_at) '
+                . "VALUES (:hash, :nickname, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+            );
+            $statement->execute($values);
+        });
 
         return (int) $this->database->lastInsertId();
     }
@@ -41,11 +44,14 @@ final class ParticipantRepository
         $statement = $this->database->prepare('SELECT * FROM participants WHERE token_hash = :hash LIMIT 1');
         $statement->execute(['hash' => $this->tokens->hash($token)]);
         $participant = $statement->fetch();
+        $statement->closeCursor();
         if (!is_array($participant)) {
             return null;
         }
-        $statement = $this->database->prepare("UPDATE participants SET last_seen_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id");
-        $this->writes->run(fn () => $statement->execute(['id' => $participant['id']]));
+        $this->writes->run(function () use ($participant): void {
+            $statement = $this->database->prepare("UPDATE participants SET last_seen_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id");
+            $statement->execute(['id' => $participant['id']]);
+        });
 
         return $participant;
     }
@@ -93,10 +99,12 @@ final class ParticipantRepository
         if ($this->acquisitionCount($participantId) < $requiredCount) {
             return false;
         }
-        $statement = $this->database->prepare(
-            "UPDATE participants SET completed_at = COALESCE(completed_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id",
-        );
-        $this->writes->run(fn () => $statement->execute(['id' => $participantId]));
+        $this->writes->run(function () use ($participantId): void {
+            $statement = $this->database->prepare(
+                "UPDATE participants SET completed_at = COALESCE(completed_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id",
+            );
+            $statement->execute(['id' => $participantId]);
+        });
         return true;
     }
 }

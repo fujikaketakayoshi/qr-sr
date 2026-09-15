@@ -19,7 +19,7 @@ final class SqliteWriteRetrier
         ?Closure $sleeper = null,
         ?Closure $onRetry = null,
     ) {
-        $this->sleeper = $sleeper ?? static fn (int $milliseconds): int => usleep($milliseconds * 1000);
+        $this->sleeper = $sleeper ?? static fn (int $milliseconds): null => usleep($milliseconds * 1000);
         $this->onRetry = $onRetry;
     }
 

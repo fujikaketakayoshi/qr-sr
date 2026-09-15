@@ -26,11 +26,6 @@ final class AuditLogRepository
         ?string $targetType = null,
         ?int $targetId = null,
     ): void {
-        $statement = $this->database->prepare(
-            'INSERT INTO audit_logs '
-            . '(event_type, actor_type, actor_id, target_type, target_id, result, context_json, created_at) '
-            . "VALUES (:event_type, :actor_type, :actor_id, :target_type, :target_id, :result, :context_json, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
-        );
         $values = [
             'event_type' => $eventType,
             'actor_type' => $actorType,
@@ -40,7 +35,14 @@ final class AuditLogRepository
             'result' => $result,
             'context_json' => json_encode($context, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
         ];
-        $this->writes->run(fn () => $statement->execute($values));
+        $this->writes->run(function () use ($values): void {
+            $statement = $this->database->prepare(
+                'INSERT INTO audit_logs '
+                . '(event_type, actor_type, actor_id, target_type, target_id, result, context_json, created_at) '
+                . "VALUES (:event_type, :actor_type, :actor_id, :target_type, :target_id, :result, :context_json, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+            );
+            $statement->execute($values);
+        });
     }
 
     /** @return list<array<string, mixed>> */

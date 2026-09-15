@@ -11,6 +11,22 @@ use QrRally\Exception\DatabaseBusyException;
 
 final class SqliteWriteRetrierTest extends TestCase
 {
+    public function testDefaultSleeperRetriesLockedWrite(): void
+    {
+        $attempts = 0;
+
+        $result = (new SqliteWriteRetrier([1]))->run(static function () use (&$attempts): string {
+            $attempts++;
+            if ($attempts === 1) {
+                throw new PDOException('database is locked');
+            }
+            return 'saved';
+        });
+
+        self::assertSame('saved', $result);
+        self::assertSame(2, $attempts);
+    }
+
     public function testRetriesLockedWriteUsingConfiguredDelays(): void
     {
         $attempts = 0;
