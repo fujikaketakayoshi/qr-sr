@@ -58,6 +58,49 @@ final class TemplateRendererTest extends TestCase
         self::assertStringContainsString("document.getElementById('application_deadline_at').value = ''", $html);
     }
 
+    public function testSpotIndexShowsRegisteredSpotCountIncludingInactiveSpots(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('admin/spots/index.php', [
+            'spots' => [
+                [
+                    'management_token' => 'active-spot',
+                    'name' => '有効スポット',
+                    'description' => '',
+                    'is_active' => 1,
+                    'acquisition_count' => 0,
+                ],
+                [
+                    'management_token' => 'inactive-spot',
+                    'name' => '停止中スポット',
+                    'description' => '',
+                    'is_active' => 0,
+                    'acquisition_count' => 0,
+                ],
+            ],
+            'event' => null,
+            'canDelete' => false,
+            'csrfToken' => 'test-token',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('登録スポット数：<strong>2件</strong>', $html);
+    }
+
+    public function testSpotIndexShowsZeroRegisteredSpots(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('admin/spots/index.php', [
+            'spots' => [],
+            'event' => null,
+            'canDelete' => false,
+            'csrfToken' => 'test-token',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('登録スポット数：<strong>0件</strong>', $html);
+    }
+
     public function testBackupRestoreConfirmationShowsSpotCountFromManifest(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
