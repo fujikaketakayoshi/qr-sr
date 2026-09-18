@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QrRally\Tests\Integration;
 
 use PDO;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use QrRally\Backup\BackupException;
 use QrRally\Backup\BackupManager;
@@ -88,6 +89,45 @@ final class BackupManagerTest extends TestCase
         }
         self::assertSame($before, hash_file('sha256', $this->databasePath));
         self::assertFileDoesNotExist($this->directory . '/outside.txt');
+    }
+
+    #[DataProvider('invalidArchivePathProvider')]
+    public function testRejectsArchivePathTraversalAndAbsolutePaths(string $invalidName): void
+    {
+        $path = $this->directory . '/invalid-path-' . bin2hex(random_bytes(4)) . '.zip';
+        $zip = new ZipArchive();
+        self::assertTrue($zip->open($path, ZipArchive::CREATE) === true);
+        $zip->addFromString($invalidName, '{}');
+        $zip->addFromString('database.sqlite', 'invalid');
+        $zip->close();
+
+        $this->expectException(BackupException::class);
+        $this->expectExceptionMessage('不正なパス');
+        $this->manager->validateUploaded($path, (int) filesize($path));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function invalidArchivePathProvider(): iterable
+    {
+        yield 'unix traversal' => ['../manifest.json'];
+        yield 'unix absolute path' => ['/manifest.json'];
+        yield 'windows traversal' => ['..\\manifest.json'];
+        yield 'nested path' => ['nested/manifest.json'];
+    }
+
+    public function testRejectsSymbolicLinkArchiveEntry(): void
+    {
+        $path = $this->directory . '/symbolic-link.zip';
+        $zip = new ZipArchive();
+        self::assertTrue($zip->open($path, ZipArchive::CREATE) === true);
+        $zip->addFromString('manifest.json', 'database.sqlite');
+        $zip->setExternalAttributesName('manifest.json', ZipArchive::OPSYS_UNIX, 0120777 << 16);
+        $zip->addFromString('database.sqlite', 'invalid');
+        $zip->close();
+
+        $this->expectException(BackupException::class);
+        $this->expectExceptionMessage('シンボリックリンク');
+        $this->manager->validateUploaded($path, (int) filesize($path));
     }
 
     public function testRestoresValidatedDatabaseAndRecordsCompletion(): void
