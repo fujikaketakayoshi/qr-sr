@@ -55,6 +55,7 @@ final class BackupManagerTest extends TestCase
         $backup = $this->manager->create();
         self::assertSame('qr-stamp-rally', $backup['manifest']['product']);
         self::assertSame(1, $backup['manifest']['backup_version']);
+        self::assertSame('0.1.0', $backup['manifest']['product_version']);
         self::assertSame(1, $backup['manifest']['table_counts']['admins']);
         self::assertSame(1, $backup['manifest']['table_counts']['backup_secrets']);
 
@@ -147,6 +148,33 @@ final class BackupManagerTest extends TestCase
         self::assertSame(1, (int) $restored->query("SELECT COUNT(*) FROM audit_logs WHERE event_type = 'backup.restore'")->fetchColumn());
         self::assertSame(0, (int) $restored->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'backup_secrets'")->fetchColumn());
         self::assertSame('completed', $states->read()['status'] ?? null);
+        $this->database = $restored;
+    }
+
+    public function testRestoreUpgradesCompatibleLegacyProductVersion(): void
+    {
+        $this->database->exec(
+            "UPDATE app_settings SET setting_value = '0.1.0-dev' WHERE setting_key = 'product_version'",
+        );
+        $backup = $this->manager->create();
+        self::assertSame('0.1.0-dev', $backup['manifest']['product_version']);
+
+        $this->database->exec(
+            "UPDATE app_settings SET setting_value = '0.1.0' WHERE setting_key = 'product_version'",
+        );
+        $validated = $this->manager->validateUploaded($backup['path'], (int) filesize($backup['path']));
+        unset($this->database);
+
+        $states = new RestoreStateStore($this->workRoot . '/restore-state.json');
+        $this->manager->restore($validated['database_path'], $validated['manifest'], $states, 1);
+
+        $restored = (new ConnectionFactory())->connect($this->databasePath, 1000);
+        self::assertSame('0.1.0', $restored->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
+        )->fetchColumn());
+        self::assertSame('1', $restored->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'schema_version'",
+        )->fetchColumn());
         $this->database = $restored;
     }
 

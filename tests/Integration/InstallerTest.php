@@ -68,6 +68,12 @@ final class InstallerTest extends TestCase
         self::assertTrue(password_verify('strong-password-123', $admin['password_hash']));
         self::assertTrue(password_verify($result['recovery_key'], $admin['recovery_key_hash']));
         self::assertSame(1, (int) $database->query('SELECT COUNT(*) FROM admins')->fetchColumn());
+        self::assertSame('0.1.0', $database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
+        )->fetchColumn());
+        self::assertSame('1', $database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'schema_version'",
+        )->fetchColumn());
 
         $this->expectException(InstallException::class);
         $this->expectExceptionMessage('すでにインストール');
@@ -81,6 +87,9 @@ final class InstallerTest extends TestCase
         $sourceDatabase = $sourceDirectory . '/app.sqlite';
         $source = (new ConnectionFactory())->connect($sourceDatabase);
         (new Migrator($source, $this->applicationRoot . '/database/migrations'))->migrate();
+        $source->exec(
+            "UPDATE app_settings SET setting_value = '0.1.0-dev' WHERE setting_key = 'product_version'",
+        );
         $source->exec(
             "INSERT INTO admins (email, password_hash, recovery_key_hash, created_at, updated_at) "
             . "VALUES ('restored@example.test', 'password-hash', 'recovery-hash', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
@@ -108,6 +117,12 @@ final class InstallerTest extends TestCase
         self::assertSame('https://old.example/', $result['source_base_url']);
         $database = (new ConnectionFactory())->connect($private . '/storage/app.sqlite');
         self::assertSame('restored@example.test', $database->query('SELECT email FROM admins')->fetchColumn());
+        self::assertSame('0.1.0', $database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
+        )->fetchColumn());
+        self::assertSame('1', $database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'schema_version'",
+        )->fetchColumn());
         self::assertSame(1, (int) $database->query("SELECT COUNT(*) FROM audit_logs WHERE event_type = 'backup.restore.new_environment'")->fetchColumn());
         $config = require $this->publicConfig;
         self::assertSame($sourceQrKey, $config['spot_token_key']);

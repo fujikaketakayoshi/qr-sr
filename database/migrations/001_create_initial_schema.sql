@@ -125,5 +125,5 @@ VALUES
 
 INSERT INTO app_settings (setting_key, setting_value, updated_at)
 VALUES
-    ('product_version', '0.1.0-dev', strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    ('product_version', '', strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     ('schema_version', '1', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));

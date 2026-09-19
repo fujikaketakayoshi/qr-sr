@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
 use QrRally\Database\ConnectionFactory;
+use QrRally\Support\ProductVersion;
 use SQLite3;
 use Throwable;
 use ZipArchive;
@@ -17,7 +18,6 @@ final class BackupManager
 {
     public const PRODUCT = 'qr-stamp-rally';
     public const FORMAT_VERSION = 1;
-    public const CURRENT_PRODUCT_VERSION = '0.1.0-dev';
     public const CURRENT_SCHEMA_VERSION = '1';
     public const MAX_ZIP_BYTES = 100 * 1024 * 1024;
     public const MAX_DATABASE_BYTES = 250 * 1024 * 1024;
@@ -166,6 +166,7 @@ final class BackupManager
                 throw new BackupException('検証済みDBを正式な保存先へ配置できません。');
             }
             $restored = (new ConnectionFactory())->connect($destinationPath, $this->busyTimeoutMs);
+            (new ProductVersion(dirname(__DIR__, 2) . '/VERSION'))->synchronize($restored);
             $this->assertIntegrity($restored);
             $this->assertForeignKeys($restored);
             $statement = $restored->prepare(
@@ -208,6 +209,7 @@ final class BackupManager
             }
             $restored = (new ConnectionFactory())->connect($this->databasePath, $this->busyTimeoutMs);
             $this->removeBackupSecrets($restored);
+            (new ProductVersion(dirname(__DIR__, 2) . '/VERSION'))->synchronize($restored);
             $this->assertIntegrity($restored);
             $this->assertForeignKeys($restored);
             $statement = $restored->prepare(
@@ -529,7 +531,7 @@ final class BackupManager
             throw new BackupException('製品バージョン情報がDBと一致しません。');
         }
         $source = preg_replace('/[^0-9.].*$/', '', (string) ($manifest['product_version'] ?? '')) ?: '0.0.0';
-        $current = preg_replace('/[^0-9.].*$/', '', self::CURRENT_PRODUCT_VERSION) ?: '0.0.0';
+        $current = preg_replace('/[^0-9.].*$/', '', ProductVersion::current()) ?: '0.0.0';
         if (version_compare($source, $current, '>')) {
             throw new BackupException('新しい製品バージョンのバックアップは復元できません。');
         }

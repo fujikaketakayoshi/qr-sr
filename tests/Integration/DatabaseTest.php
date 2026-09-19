@@ -48,10 +48,31 @@ final class DatabaseTest extends TestCase
             '002_add_admin_login_attempts.sql',
             '003_add_admin_auth_version.sql',
             '004_add_spot_token_version.sql',
+            '005_prepare_product_version_sync.sql',
         ], $migrator->migrate());
         self::assertSame([], $migrator->migrate());
         self::assertSame('ok', $this->database->query('PRAGMA integrity_check')->fetchColumn());
-        self::assertSame(4, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(5, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(4, (int) $this->database->query('SELECT COUNT(*) FROM application_fields')->fetchColumn());
+        self::assertSame('0.1.0', $this->database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
+        )->fetchColumn());
+    }
+
+    public function testMigrateSynchronizesLegacyProductVersionWithoutChangingSchemaVersion(): void
+    {
+        $migrator = new Migrator($this->database, dirname(__DIR__, 2) . '/database/migrations');
+        $migrator->migrate();
+        $this->database->exec(
+            "UPDATE app_settings SET setting_value = '0.1.0-dev' WHERE setting_key = 'product_version'",
+        );
+
+        self::assertSame([], $migrator->migrate());
+        self::assertSame('0.1.0', $this->database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
+        )->fetchColumn());
+        self::assertSame('1', $this->database->query(
+            "SELECT setting_value FROM app_settings WHERE setting_key = 'schema_version'",
+        )->fetchColumn());
     }
 }

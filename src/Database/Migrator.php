@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace QrRally\Database;
 
 use PDO;
+use QrRally\Support\ProductVersion;
 use RuntimeException;
 use Throwable;
 
 final class Migrator
 {
+    private readonly ProductVersion $productVersion;
+
     public function __construct(
         private readonly PDO $database,
         private readonly string $directory,
+        ?ProductVersion $productVersion = null,
     ) {
+        $this->productVersion = $productVersion ?? new ProductVersion(dirname(__DIR__, 2) . '/VERSION');
     }
 
     /** @return list<string> */
@@ -65,6 +70,8 @@ final class Migrator
                 throw new RuntimeException("Migration failed: {$name}", 0, $error);
             }
         }
+
+        $this->productVersion->synchronize($this->database);
 
         return $applied;
     }
