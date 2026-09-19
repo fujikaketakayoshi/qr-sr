@@ -92,4 +92,4 @@ php bin/setup-local.php
 composer test
 ```
 
-開発用の`config/app.php`と`storage/`内の生成物は配布対象ではありません。一般利用者向け配布物は、今後`tools/build-release.php`で許可リストから生成します。
+開発用の`config/app.php`と`storage/`内の生成物は配布対象ではありません。一般利用者向け配布物は`tools/build-release.php`で許可リストから生成します。
