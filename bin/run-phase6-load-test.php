@@ -9,6 +9,7 @@ use QrRally\Database\Migrator;
 use QrRally\Repository\ApplicationRepository;
 use QrRally\Repository\ParticipantRepository;
 use QrRally\Security\ParticipantToken;
+use QrRally\Security\SpotToken;
 use QrRally\Support\CsvValue;
 
 if (PHP_SAPI !== 'cli') {
@@ -63,6 +64,7 @@ try {
     $databasePath = $testDirectory . '/load.sqlite';
     $database = (new ConnectionFactory())->connect($databasePath, 5000);
     (new Migrator($database, $root . '/database/migrations'))->migrate();
+    $spotTokens = new SpotToken($config->string('spot_token_key'));
 
     $measurements = [];
     $measure = static function (string $name, Closure $operation) use (&$measurements): mixed {
@@ -72,7 +74,7 @@ try {
         return $result;
     };
 
-    $measure('seed_ms', static function () use ($database): void {
+    $measure('seed_ms', static function () use ($database, $spotTokens): void {
         $database->beginTransaction();
         try {
             $database->prepare(
@@ -92,7 +94,7 @@ try {
             );
             for ($spotNumber = 1; $spotNumber <= LOAD_SPOT_COUNT; $spotNumber++) {
                 $spot->execute([
-                    'hash' => hash('sha256', 'phase6-spot-' . $spotNumber),
+                    'hash' => $spotTokens->hash($spotTokens->derive($spotNumber, 1)),
                     'name' => '負荷試験スポット' . $spotNumber,
                     'display_order' => $spotNumber,
                 ]);
