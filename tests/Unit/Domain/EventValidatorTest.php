@@ -41,6 +41,19 @@ final class EventValidatorTest extends TestCase
         self::assertArrayHasKey('required_stamp_count', $errors);
     }
 
+    public function testAcceptsRequiredCountFiftyAndRejectsFiftyOne(): void
+    {
+        $validator = new EventValidator();
+        $valid = new EventInput('イベント', '', '', '2026-08-11T10:00', '2026-08-11T18:00', false, '', 50, '');
+        $invalid = new EventInput('イベント', '', '', '2026-08-11T10:00', '2026-08-11T18:00', false, '', 51, '');
+
+        self::assertArrayNotHasKey('required_stamp_count', $validator->validate($valid, 'Asia/Tokyo', 50));
+        self::assertSame(
+            '達成数は1〜50で入力してください。',
+            $validator->validate($invalid, 'Asia/Tokyo', 51)['required_stamp_count'],
+        );
+    }
+
     public function testAcceptsEndAtOrBeforeExplicitApplicationDeadline(): void
     {
         $validator = new EventValidator();

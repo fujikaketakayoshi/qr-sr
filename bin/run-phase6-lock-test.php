@@ -64,7 +64,7 @@ try {
     assertExpectedFixture($database);
 
     $participantId = 1;
-    $spotId = 20;
+    $spotId = 50;
     removeAcquisition($database, $participantId, $spotId);
 
     $successfulRetry = runLockedAcquisition(
@@ -190,7 +190,7 @@ function assertExpectedFixture(PDO $database): void
     foreach (['admins', 'spots', 'participants', 'stamp_acquisitions', 'applications'] as $table) {
         $counts[$table] = (int) $database->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
     }
-    if ($counts !== ['admins' => 1, 'spots' => 20, 'participants' => 2000, 'stamp_acquisitions' => 40000, 'applications' => 1000]) {
+    if ($counts !== ['admins' => 1, 'spots' => 50, 'participants' => 2000, 'stamp_acquisitions' => 100000, 'applications' => 1000]) {
         throw new RuntimeException('最大想定データの試験DBではありません。');
     }
 }

@@ -74,4 +74,18 @@ final class ParticipantRepositoryTest extends TestCase
         self::assertSame(1, $this->participants->acquisitionCount($participantId));
         self::assertNotNull($this->database->query("SELECT completed_at FROM participants WHERE id = {$participantId}")->fetchColumn());
     }
+
+    public function testParticipantCompletesOnFiftiethAcquisition(): void
+    {
+        $participantId = $this->participants->create($this->tokens->generate(), '50スポット参加者');
+        for ($number = 1; $number <= 50; $number++) {
+            $spotId = $this->spots->create(new SpotInput("スポット{$number}", ''));
+            $this->participants->acquire($participantId, $spotId, null);
+            self::assertSame($number === 50, $this->participants->markCompletedIfEligible($participantId, 50));
+        }
+
+        self::assertSame(50, $this->participants->acquisitionCount($participantId));
+        self::assertCount(50, $this->participants->stampBoard($participantId));
+        self::assertNotNull($this->database->query("SELECT completed_at FROM participants WHERE id = {$participantId}")->fetchColumn());
+    }
 }

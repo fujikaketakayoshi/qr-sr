@@ -52,8 +52,8 @@ final class EventValidator
                 $errors['ends_at'] = "終了日時は、設定済みの応募締切（{$displayDeadline}）以前にしてください。先に応募設定で締切を変更することもできます。";
             }
         }
-        if ($input->requiredStampCount < 1 || $input->requiredStampCount > 20) {
-            $errors['required_stamp_count'] = '達成数は1〜20で入力してください。';
+        if ($input->requiredStampCount < 1 || $input->requiredStampCount > 50) {
+            $errors['required_stamp_count'] = '達成数は1〜50で入力してください。';
         } elseif ($registeredSpotCount !== null && $registeredSpotCount > 0
             && $input->requiredStampCount > $registeredSpotCount) {
             $errors['required_stamp_count'] = "達成数は登録済みスポット数（{$registeredSpotCount}）以下にしてください。";

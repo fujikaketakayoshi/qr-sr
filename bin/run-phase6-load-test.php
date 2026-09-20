@@ -19,6 +19,11 @@ if (PHP_SAPI !== 'cli') {
 $root = dirname(__DIR__);
 require $root . '/vendor/autoload.php';
 
+const LOAD_SPOT_COUNT = 50;
+const LOAD_PARTICIPANT_COUNT = 2_000;
+const LOAD_APPLICATION_COUNT = 1_000;
+const LOAD_CONCURRENT_WORKERS = 8;
+
 $options = getopt('', ['create-backup', 'keep-database', 'output-directory:', 'help']);
 if (array_key_exists('help', $options)) {
     fwrite(STDOUT, implode("\n", [
@@ -79,13 +84,13 @@ try {
             ]);
             $database->exec(
                 "INSERT INTO events (id,name,starts_at,ends_at,required_stamp_count,application_enabled,created_at,updated_at) "
-                . "VALUES (1,'フェーズ6負荷試験','2026-01-01T00:00:00Z','2030-01-01T00:00:00Z',20,1,'now','now')",
+                . "VALUES (1,'フェーズ6負荷試験','2026-01-01T00:00:00Z','2030-01-01T00:00:00Z'," . LOAD_SPOT_COUNT . ",1,'now','now')",
             );
             $spot = $database->prepare(
                 "INSERT INTO spots (public_token_hash,name,description,display_order,is_active,created_at,updated_at) "
                 . "VALUES (:hash,:name,'',:display_order,1,'now','now')",
             );
-            for ($spotNumber = 1; $spotNumber <= 20; $spotNumber++) {
+            for ($spotNumber = 1; $spotNumber <= LOAD_SPOT_COUNT; $spotNumber++) {
                 $spot->execute([
                     'hash' => hash('sha256', 'phase6-spot-' . $spotNumber),
                     'name' => '負荷試験スポット' . $spotNumber,
@@ -103,19 +108,19 @@ try {
                 "INSERT INTO applications (participant_id,application_number,name,email,address,phone,privacy_accepted_at,submitted_at,updated_at) "
                 . "VALUES (:participant_id,:number,:name,:email,:address,:phone,'now','now','now')",
             );
-            for ($participantNumber = 1; $participantNumber <= 2_000; $participantNumber++) {
+            for ($participantNumber = 1; $participantNumber <= LOAD_PARTICIPANT_COUNT; $participantNumber++) {
                 $participant->execute([
                     'hash' => hash('sha256', 'phase6-participant-' . $participantNumber),
                     'nickname' => '参加者' . $participantNumber,
                 ]);
-                for ($spotNumber = 1; $spotNumber <= 20; $spotNumber++) {
+                for ($spotNumber = 1; $spotNumber <= LOAD_SPOT_COUNT; $spotNumber++) {
                     $acquisition->execute([
                         'participant_id' => $participantNumber,
                         'spot_id' => $spotNumber,
                         'ip_hash' => hash_hmac('sha256', '192.0.2.' . ($participantNumber % 255), str_repeat('a', 64)),
                     ]);
                 }
-                if ($participantNumber % 2 === 0) {
+                if ($participantNumber <= LOAD_APPLICATION_COUNT * 2 && $participantNumber % 2 === 0) {
                     $application->execute([
                         'participant_id' => $participantNumber,
                         'number' => sprintf('LOAD-%06d', $participantNumber),
@@ -146,11 +151,11 @@ try {
     $measure('all_participants_csv_ms', static fn (): int => csvBytes($allRows));
     $measure('applicants_csv_ms', static fn (): int => csvBytes($applicantRows));
 
-    $database->exec('DELETE FROM stamp_acquisitions WHERE participant_id=1 AND spot_id=20');
-    $measure('stamp_acquire_ms', static fn (): string => $participants->acquire(1, 20, null));
-    $database->exec('DELETE FROM stamp_acquisitions WHERE participant_id=1 AND spot_id=20');
+    $database->exec('DELETE FROM stamp_acquisitions WHERE participant_id=1 AND spot_id=' . LOAD_SPOT_COUNT);
+    $measure('stamp_acquire_ms', static fn (): string => $participants->acquire(1, LOAD_SPOT_COUNT, null));
+    $database->exec('DELETE FROM stamp_acquisitions WHERE participant_id=1 AND spot_id=' . LOAD_SPOT_COUNT);
     unset($database, $participants, $applications);
-    $concurrency = runConcurrentAcquisition($root, $databasePath, $testDirectory, 1, 20, 8);
+    $concurrency = runConcurrentAcquisition($root, $databasePath, $testDirectory, 1, LOAD_SPOT_COUNT, LOAD_CONCURRENT_WORKERS);
     $database = (new ConnectionFactory())->connect($databasePath, 5000);
     $finalAcquisitions = (int) $database->query('SELECT COUNT(*) FROM stamp_acquisitions')->fetchColumn();
     $integrity = (string) $database->query('PRAGMA integrity_check')->fetchColumn();
@@ -186,7 +191,14 @@ try {
     $report = [
         'generated_at' => gmdate('c'),
         'php_version' => PHP_VERSION,
-        'conditions' => ['admins' => 1, 'spots' => 20, 'participants' => 2_000, 'acquisitions' => 40_000, 'applications' => 1_000, 'concurrent_workers' => 8],
+        'conditions' => [
+            'admins' => 1,
+            'spots' => LOAD_SPOT_COUNT,
+            'participants' => LOAD_PARTICIPANT_COUNT,
+            'acquisitions' => LOAD_SPOT_COUNT * LOAD_PARTICIPANT_COUNT,
+            'applications' => LOAD_APPLICATION_COUNT,
+            'concurrent_workers' => LOAD_CONCURRENT_WORKERS,
+        ],
         'measurements_ms' => $measurements,
         'summary' => $summary,
         'all_participant_rows' => count($allRows),
@@ -286,7 +298,11 @@ function markdownReport(array $report): string
         '# フェーズ6 負荷試験結果', '',
         '- 実行日時: ' . $report['generated_at'],
         '- PHP: ' . $report['php_version'],
-        '- 架空管理者: 1人', '- スポット: 20件', '- 参加者: 2,000人', '- 取得履歴: 40,000件', '- 応募者: 1,000人',
+        '- 架空管理者: ' . number_format((int) $report['conditions']['admins']) . '人',
+        '- スポット: ' . number_format((int) $report['conditions']['spots']) . '件',
+        '- 参加者: ' . number_format((int) $report['conditions']['participants']) . '人',
+        '- 取得履歴: ' . number_format((int) $report['conditions']['acquisitions']) . '件',
+        '- 応募者: ' . number_format((int) $report['conditions']['applications']) . '人',
         '- DBサイズ: ' . number_format((int) $report['database_bytes']) . ' bytes',
         '- バックアップZIP: ' . ($report['backup_bytes'] === null ? '未作成' : number_format((int) $report['backup_bytes']) . ' bytes'),
         '- バックアップSHA-256: ' . ($report['backup_sha256'] ?? '未作成'),
