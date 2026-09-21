@@ -22,6 +22,7 @@ final class InstallController
         private readonly EnvironmentInspector $inspector,
         private readonly Installer $installer,
         private readonly string $assetBase,
+        private readonly string $productVersion,
     ) {
     }
 
@@ -145,6 +146,7 @@ final class InstallController
             'values' => $values,
             'errors' => $errors,
             'restoreState' => $restoreState,
+            'productVersion' => $this->productVersion,
         ], 'install/layout.php');
         return new Response($body, $status, [
             'Content-Type' => 'text/html; charset=UTF-8',

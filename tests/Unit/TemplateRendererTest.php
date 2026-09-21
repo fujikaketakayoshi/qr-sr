@@ -155,9 +155,11 @@ final class TemplateRendererTest extends TestCase
             ],
             'errors' => [],
             'csrf' => 'test-token',
+            'productVersion' => '0.1.0-rc.1',
             'restoreState' => [
                 'manifest' => [
                     'created_at' => '2026-09-11T12:00:00+00:00',
+                    'product_version' => '0.1.0-dev',
                     'source_base_url' => 'https://old.example/',
                     'table_counts' => [
                         'spots' => 3,
@@ -169,6 +171,8 @@ final class TemplateRendererTest extends TestCase
             ],
         ]);
 
+        self::assertStringContainsString('インストールする製品バージョン：<strong>0.1.0-rc.1</strong>', $html);
+        self::assertStringContainsString('<dt>バックアップの製品バージョン</dt><dd>0.1.0-dev</dd>', $html);
         self::assertStringContainsString('<dt>スポット</dt><dd>3件</dd>', $html);
         self::assertStringContainsString('<dt>参加者</dt><dd>3人</dd>', $html);
         self::assertStringContainsString('<dt>応募者</dt><dd>1人</dd>', $html);

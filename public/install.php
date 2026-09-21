@@ -10,6 +10,7 @@ use QrRally\Install\EnvironmentInspector;
 use QrRally\Install\Installer;
 use QrRally\Security\CsrfToken;
 use QrRally\Session\SessionManager;
+use QrRally\Support\ProductVersion;
 use QrRally\View\TemplateRenderer;
 
 $root = dirname(__DIR__);
@@ -46,5 +47,6 @@ $controller = new InstallController(
     $inspector,
     new Installer($root, $publicConfig, $inspector),
     $assetBase,
+    ProductVersion::current(),
 );
 $controller->handle(Request::fromGlobals(), $_SERVER)->send();

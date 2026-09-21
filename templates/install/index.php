@@ -21,6 +21,7 @@ $sqliteResult = static function (?string $version) use ($diagnostics, $h): strin
 ?>
 <h1>セットアップ</h1>
 <p>新規インストール、またはこの製品で作成したバックアップから新しい環境へ復元できます。</p>
+<p>インストールする製品バージョン：<strong><?= $h($productVersion) ?></strong></p>
 <p class="warning-text"><strong>ファイルをサーバーへ配置したら、第三者に先に設定されないよう続けてセットアップを完了してください。</strong></p>
 
 <?php if ($errors !== []): ?>
@@ -61,6 +62,7 @@ $sqliteResult = static function (?string $version) use ($diagnostics, $h): strin
     <p>ZIPの検証に成功しました。復元すると、バックアップ内の管理者アカウントとイベントデータを引き継ぎます。</p>
     <dl class="status">
         <div><dt>バックアップ作成日時</dt><dd><?= $h((string) $restoreState['manifest']['created_at']) ?></dd></div>
+        <div><dt>バックアップの製品バージョン</dt><dd><?= $h((string) $restoreState['manifest']['product_version']) ?></dd></div>
         <div><dt>移転元URL</dt><dd><?= $h((string) $restoreState['manifest']['source_base_url']) ?></dd></div>
         <div><dt>新しいURL</dt><dd><?= $h($values['base_url']) ?></dd></div>
         <div><dt>スポット</dt><dd><?= (int) ($restoreState['manifest']['table_counts']['spots'] ?? 0) ?>件</dd></div>
