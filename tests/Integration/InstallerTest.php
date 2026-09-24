@@ -68,7 +68,7 @@ final class InstallerTest extends TestCase
         self::assertTrue(password_verify('strong-password-123', $admin['password_hash']));
         self::assertTrue(password_verify($result['recovery_key'], $admin['recovery_key_hash']));
         self::assertSame(1, (int) $database->query('SELECT COUNT(*) FROM admins')->fetchColumn());
-        self::assertSame('0.1.0-rc.2', $database->query(
+        self::assertSame('0.1.0', $database->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
         )->fetchColumn());
         self::assertSame('1', $database->query(
@@ -117,7 +117,7 @@ final class InstallerTest extends TestCase
         self::assertSame('https://old.example/', $result['source_base_url']);
         $database = (new ConnectionFactory())->connect($private . '/storage/app.sqlite');
         self::assertSame('restored@example.test', $database->query('SELECT email FROM admins')->fetchColumn());
-        self::assertSame('0.1.0-rc.2', $database->query(
+        self::assertSame('0.1.0', $database->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
         )->fetchColumn());
         self::assertSame('1', $database->query(
