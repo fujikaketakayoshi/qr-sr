@@ -126,6 +126,7 @@ button:disabled { cursor: not-allowed; opacity: .35; }
 .install-status div { padding-right: 1rem; }
 .install-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
 .install-cancel-form { margin-top: .75rem; }
+.trademark-notice { margin-top: 2rem; color: #63716d; font-size: .72rem; line-height: 1.6; text-align: center; }
 @media (max-width: 48rem) {
     .admin-header, .admin-header nav { align-items: flex-start; flex-direction: column; }
     .form-grid, .summary { grid-template-columns: 1fr; }

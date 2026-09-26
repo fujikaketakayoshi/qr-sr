@@ -12,7 +12,7 @@
     </div>
     <div class="spot-details"><div><span class="status-badge <?= $spot['is_active'] ? 'status-active' : 'status-paused' ?>"><?= $spot['is_active'] ? '有効' : '停止中' ?></span><h2><?= htmlspecialchars($spot['name'], ENT_QUOTES, 'UTF-8') ?></h2></div><p><?= nl2br(htmlspecialchars($spot['description'], ENT_QUOTES, 'UTF-8')) ?></p><small>取得履歴 <?= (int) $spot['acquisition_count'] ?>件</small></div>
     <div class="spot-actions">
-        <a class="button small" href="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/qr"), ENT_QUOTES, 'UTF-8') ?>">QR確認</a>
+        <a class="button small" href="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/qr"), ENT_QUOTES, 'UTF-8') ?>">QRコード確認</a>
         <a class="button small secondary" href="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/print"), ENT_QUOTES, 'UTF-8') ?>">印刷</a>
         <a class="button small secondary" href="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/edit"), ENT_QUOTES, 'UTF-8') ?>">編集</a>
         <form method="post" action="<?= htmlspecialchars($url("admin/spots/{$spot['management_token']}/toggle"), ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>"><button class="small secondary" type="submit"><?= $spot['is_active'] ? '停止' : '再開' ?></button></form>

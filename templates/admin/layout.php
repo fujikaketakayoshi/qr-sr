@@ -8,7 +8,7 @@
 </head>
 <body>
 <header class="admin-header">
-    <a class="brand" href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">QRスタンプラリー管理</a>
+    <a class="brand" href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">QRコードスタンプラリー管理</a>
     <nav>
         <a href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">概要</a>
         <a href="<?= htmlspecialchars($url('admin/event'), ENT_QUOTES, 'UTF-8') ?>">イベント設定</a>

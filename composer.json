@@ -1,6 +1,6 @@
 {
     "name": "fjkk/qr-stamp-rally",
-    "description": "Self-hosted QR digital stamp rally",
+    "description": "Self-hosted QR code stamp rally",
     "type": "project",
     "license": "proprietary",
     "require": {

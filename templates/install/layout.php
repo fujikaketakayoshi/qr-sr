@@ -4,13 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
-    <title><?= htmlspecialchars((string) ($title ?? 'セットアップ'), ENT_QUOTES, 'UTF-8') ?> | QRデジタルスタンプラリー</title>
+    <title><?= htmlspecialchars((string) ($title ?? 'セットアップ'), ENT_QUOTES, 'UTF-8') ?> | QRコードスタンプラリー</title>
     <link rel="stylesheet" href="<?= htmlspecialchars($assetBase . 'assets/app.css', ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
 <main class="install-main">
-    <a class="brand" href="<?= htmlspecialchars($assetBase . 'install', ENT_QUOTES, 'UTF-8') ?>">QRデジタルスタンプラリー</a>
+    <a class="brand" href="<?= htmlspecialchars($assetBase . 'install', ENT_QUOTES, 'UTF-8') ?>">QRコードスタンプラリー</a>
     <?= $content ?>
+    <p class="trademark-notice">QRコードは株式会社デンソーウェーブの登録商標です。</p>
 </main>
 </body>
 </html>

@@ -1,6 +1,6 @@
 <section class="panel">
     <p class="eyebrow">WELCOME</p>
-    <h1><?= htmlspecialchars($event['name'] ?? 'QRデジタルスタンプラリー', ENT_QUOTES, 'UTF-8') ?></h1>
+    <h1><?= htmlspecialchars($event['name'] ?? 'QRコードスタンプラリー', ENT_QUOTES, 'UTF-8') ?></h1>
     <?php if ($event): ?>
         <p><?= nl2br(htmlspecialchars($event['description'], ENT_QUOTES, 'UTF-8')) ?></p>
     <?php else: ?>

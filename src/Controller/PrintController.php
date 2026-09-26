@@ -62,7 +62,7 @@ final class PrintController
         if ($spot === null) return $this->notFound();
 
         return $this->printView('print/spot.php', [
-            'title' => (string) $spot['name'] . ' 印刷用QR',
+            'title' => (string) $spot['name'] . ' 印刷用QRコード',
             'event' => $event,
             'spot' => $this->printableSpot($spot),
         ]);

@@ -4,5 +4,5 @@
     <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
     <label>スポット名<span>必須・50文字以内</span><input name="name" maxlength="50" required value="<?= htmlspecialchars($values['name'], ENT_QUOTES, 'UTF-8') ?>"><?php if (isset($errors['name'])): ?><small class="field-error"><?= htmlspecialchars($errors['name'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></label>
     <label>説明<span>1000文字以内</span><textarea name="description" maxlength="1000" rows="5"><?= htmlspecialchars($values['description'], ENT_QUOTES, 'UTF-8') ?></textarea><?php if (isset($errors['description'])): ?><small class="field-error"><?= htmlspecialchars($errors['description'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></label>
-    <button type="submit"><?= $spot === null ? '追加してQRを確認' : '変更を保存' ?></button>
+    <button type="submit"><?= $spot === null ? '追加してQRコードを確認' : '変更を保存' ?></button>
 </form>

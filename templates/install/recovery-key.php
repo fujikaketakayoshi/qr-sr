@@ -30,7 +30,7 @@
 <script>
 document.getElementById('download-key').addEventListener('click', function () {
     const key = document.getElementById('recovery-key').textContent;
-    const blob = new Blob(['QRデジタルスタンプラリー 復旧キー\n\n' + key + '\n'], {type: 'text/plain;charset=utf-8'});
+    const blob = new Blob(['QRコードスタンプラリー 復旧キー\n\n' + key + '\n'], {type: 'text/plain;charset=utf-8'});
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'qr-rally-recovery-key.txt';

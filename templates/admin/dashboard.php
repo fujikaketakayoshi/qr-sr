@@ -10,3 +10,4 @@
     </section>
     <dl class="summary summary-four"><div><dt>参加者</dt><dd><?= $summary['participants'] ?>人</dd></div><div><dt>取得</dt><dd><?= $summary['acquisitions'] ?>件</dd></div><div><dt>達成者</dt><dd><?= $summary['completed'] ?>人</dd></div><div><dt>応募者</dt><dd><?= $summary['applications'] ?>人</dd></div></dl>
 <?php endif; ?>
+<p class="trademark-notice">QRコードは株式会社デンソーウェーブの登録商標です。</p>

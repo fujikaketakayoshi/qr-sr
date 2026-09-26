@@ -23,6 +23,8 @@ final class TemplateRendererTest extends TestCase
 
         self::assertStringContainsString('&lt;production&gt;', $html);
         self::assertStringNotContainsString('<production>', $html);
+        self::assertStringContainsString('QRコードスタンプラリー', $html);
+        self::assertStringNotContainsString('QRデジタルスタンプラリー', $html);
     }
 
     public function testApplicationSettingsShowsErrorSummaryWhenValidationFails(): void

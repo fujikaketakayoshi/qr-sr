@@ -1,5 +1,5 @@
 <article class="print-page entrance-page">
-    <p class="kicker">QR DIGITAL STAMP RALLY</p>
+    <p class="kicker">QR CODE STAMP RALLY</p>
     <h1><?= htmlspecialchars($event['name'], ENT_QUOTES, 'UTF-8') ?></h1>
     <?php if ($event['description'] !== ''): ?><p class="event-description"><?= nl2br(htmlspecialchars($event['description'], ENT_QUOTES, 'UTF-8')) ?></p><?php endif; ?>
     <p class="event-period"><strong>開催期間</strong> <?= htmlspecialchars($startsAt, ENT_QUOTES, 'UTF-8') ?> ～ <?= htmlspecialchars($endsAt, ENT_QUOTES, 'UTF-8') ?></p>

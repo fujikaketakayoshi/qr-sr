@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>QRデジタルスタンプラリー</title>
+    <title>QRコードスタンプラリー</title>
     <link rel="stylesheet" href="<?= htmlspecialchars($assetUrl, ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
     <main class="container">
-        <p class="eyebrow">QR DIGITAL STAMP RALLY</p>
-        <h1>QRデジタルスタンプラリー</h1>
+        <p class="eyebrow">QR CODE STAMP RALLY</p>
+        <h1>QRコードスタンプラリー</h1>
         <p>アプリケーションの開発基盤が動作しています。</p>
         <dl class="status">
             <div><dt>環境</dt><dd><?= htmlspecialchars($environment, ENT_QUOTES, 'UTF-8') ?></dd></div>
