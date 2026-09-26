@@ -10,6 +10,21 @@ use QrRally\View\TemplateRenderer;
 
 final class TemplateRendererTest extends TestCase
 {
+    public function testAdminNavigationUsesDashboardLabel(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('admin/layout.php', [
+            'title' => '管理画面',
+            'content' => '',
+            'flash' => null,
+            'csrfToken' => 'test-token',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('>ダッシュボード</a>', $html);
+        self::assertStringNotContainsString('>概要</a>', $html);
+    }
+
     public function testEscapedHomeTemplateOutput(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');

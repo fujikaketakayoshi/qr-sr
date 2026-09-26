@@ -10,7 +10,7 @@
 <header class="admin-header">
     <a class="brand" href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">QRコードスタンプラリー管理</a>
     <nav>
-        <a href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">概要</a>
+        <a href="<?= htmlspecialchars($url('admin/'), ENT_QUOTES, 'UTF-8') ?>">ダッシュボード</a>
         <a href="<?= htmlspecialchars($url('admin/event'), ENT_QUOTES, 'UTF-8') ?>">イベント設定</a>
         <a href="<?= htmlspecialchars($url('admin/spots'), ENT_QUOTES, 'UTF-8') ?>">スポット管理</a>
         <a href="<?= htmlspecialchars($url('admin/applications'), ENT_QUOTES, 'UTF-8') ?>">参加・応募</a>
