@@ -123,11 +123,34 @@ final class SecurityRequirementsTest extends TestCase
         self::assertStringContainsString("->hidden('新しいパスワード", $source);
     }
 
+    public function testDemoRestrictedActionsContainServerSideGuard(): void
+    {
+        $root = dirname(__DIR__, 2) . '/src/Controller/';
+        $requirements = [
+            'AdminController.php' => ['resetForm', 'reset'],
+            'BackupController.php' => ['download', 'upload', 'restore'],
+            'ApplicationController.php' => ['csv', 'applicationsCsv'],
+            'SpotController.php' => ['reissue'],
+        ];
+
+        foreach ($requirements as $file => $methods) {
+            $source = (string) file_get_contents($root . $file);
+            foreach ($methods as $method) {
+                $start = strpos($source, 'public function ' . $method . '(');
+                self::assertNotFalse($start, "{$file}::{$method} must exist");
+                $next = strpos($source, '\n    public function ', $start + 1);
+                $body = substr($source, $start, ($next === false ? strlen($source) : $next) - $start);
+                self::assertStringContainsString('demoMode->enabled()', $body, "{$file}::{$method} must enforce demo mode server-side");
+            }
+        }
+    }
+
     public function testBusyAndRateLimitPagesGiveJapaneseRetryGuidance(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
 
         self::assertStringContainsString('少し時間をおいて再度お試しください', $renderer->render('errors/429.php'));
         self::assertStringContainsString('もう一度QRコードを読み取ってください', $renderer->render('errors/503.php'));
+        self::assertStringContainsString('ただいまデータを初期化しています', $renderer->render('errors/maintenance.php'));
     }
 }

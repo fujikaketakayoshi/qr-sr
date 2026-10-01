@@ -1,0 +1,2 @@
+# PHPとアプリルートはVPSの実値へ置き換える。
+0 * * * * cd /var/www/qr-sr-demo/app && /usr/bin/php ops/demo-vps/bin/reset-demo.php

@@ -65,6 +65,7 @@ final class ReleaseBuilderTest extends TestCase
         self::assertNotContains('qr-stamp-rally-0.1.0/tests/example.php', $entries);
         self::assertFalse($this->containsPath($entries, '/tools/'));
         self::assertFalse($this->containsPath($entries, '/storage/'));
+        self::assertFalse($this->containsPath($entries, '/ops/'));
 
         self::assertTrue($this->commandWasRunWith('install', '--no-dev'));
         self::assertTrue($this->commandWasRunWith('phpunit', '--colors=never'));
@@ -168,7 +169,7 @@ final class ReleaseBuilderTest extends TestCase
     {
         $directories = [
             'public/assets/fonts', 'src', 'templates', 'database/migrations', 'config', 'bin', 'docs',
-            'tests', 'storage', 'vendor/bin',
+            'tests', 'storage', 'vendor/bin', 'ops/demo-vps',
         ];
         foreach ($directories as $directory) {
             mkdir($this->project . '/' . $directory, 0700, true);
@@ -198,6 +199,7 @@ final class ReleaseBuilderTest extends TestCase
             'docs/UNINSTALL.md' => '# Uninstall',
             'tests/example.php' => '<?php echo "test";',
             'storage/app.sqlite' => 'database',
+            'ops/demo-vps/reset.php' => '<?php echo "demo only";',
             'vendor/bin/phpunit' => '#!/usr/bin/env php',
         ];
         foreach ($files as $relative => $contents) {

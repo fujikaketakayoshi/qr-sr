@@ -1,1 +1,9 @@
-<section class="panel"><h1>応募を受け付けました</h1><p>お問い合わせの際は、次の応募番号をお伝えください。</p><p class="application-number"><?= htmlspecialchars($application['application_number'],ENT_QUOTES,'UTF-8') ?></p><dl class="status"><?php foreach($fields as $field):?><?php if(!$field['is_enabled'])continue;$type=$field['field_type'];?><div><dt><?= ['name'=>'氏名','email'=>'メールアドレス','address'=>'住所','phone'=>'電話番号'][$type] ?></dt><dd><?= nl2br(htmlspecialchars($application[$type]??'（未入力）',ENT_QUOTES,'UTF-8')) ?></dd></div><?php endforeach;?></dl><?php if($editable):?><p><a class="button" href="<?= htmlspecialchars($url('application'),ENT_QUOTES,'UTF-8') ?>">応募内容を編集</a></p><?php else:?><p class="notice-text"><?= htmlspecialchars($editUnavailableMessage,ENT_QUOTES,'UTF-8') ?></p><?php endif;?><p><a href="<?= htmlspecialchars($url(),ENT_QUOTES,'UTF-8') ?>">スタンプ台紙へ戻る</a></p></section>
+<section class="panel">
+    <h1>応募を受け付けました</h1>
+    <?php if ($demoMode ?? false): ?><p class="demo-input-warning">これは公開デモ上の応募です。データは次回の毎時00分の初期化で削除されます。</p><?php endif; ?>
+    <p>お問い合わせの際は、次の応募番号をお伝えください。</p>
+    <p class="application-number"><?= htmlspecialchars($application['application_number'], ENT_QUOTES, 'UTF-8') ?></p>
+    <dl class="status"><?php foreach ($fields as $field): ?><?php if (!$field['is_enabled']) continue; $type = $field['field_type']; ?><div><dt><?= ['name' => '氏名', 'email' => 'メールアドレス', 'address' => '住所', 'phone' => '電話番号'][$type] ?></dt><dd><?= nl2br(htmlspecialchars($application[$type] ?? '（未入力）', ENT_QUOTES, 'UTF-8')) ?></dd></div><?php endforeach; ?></dl>
+    <?php if ($editable): ?><p><a class="button" href="<?= htmlspecialchars($url('application'), ENT_QUOTES, 'UTF-8') ?>">応募内容を編集</a></p><?php else: ?><p class="notice-text"><?= htmlspecialchars($editUnavailableMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <p><a href="<?= htmlspecialchars($url(), ENT_QUOTES, 'UTF-8') ?>">スタンプ台紙へ戻る</a></p>
+</section>

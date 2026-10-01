@@ -20,6 +20,7 @@ use QrRally\Support\QrCodeGenerator;
 use QrRally\Support\DownloadFilename;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
+use QrRally\Support\DemoMode;
 use QrRally\View\TemplateRenderer;
 use RuntimeException;
 
@@ -38,6 +39,7 @@ final class SpotController
         private readonly SpotValidator $validator,
         private readonly QrCodeGenerator $qrCodes,
         private readonly DownloadFilename $filenames,
+        private readonly DemoMode $demoMode,
     ) {
     }
 
@@ -198,8 +200,16 @@ final class SpotController
 
     public function reissue(Request $request, int $id): Response
     {
-        if (($response = $this->guardPost($request)) !== null) {
+        if (($response = $this->requireAdmin()) !== null) {
             return $response;
+        }
+        if ($this->demoMode->enabled()) {
+            return $this->view('errors/demo-restricted.php', [
+                'title' => '公開デモでは使用できません',
+            ], 403);
+        }
+        if (!$this->csrf->verify($request->input('_csrf'))) {
+            return $this->view('errors/419.php', ['title' => '操作を続けられません'], 419);
         }
         try {
             $this->spots->reissueToken($id);

@@ -70,6 +70,7 @@ final class ReleaseBuilder
         'storage',
         'tests',
         'tools',
+        'ops',
         'bin/create-admin.php',
         'bin/setup-local.php',
         'bin/reset-local.php',

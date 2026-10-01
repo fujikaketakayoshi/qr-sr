@@ -25,6 +25,57 @@ final class TemplateRendererTest extends TestCase
         self::assertStringNotContainsString('>概要</a>', $html);
     }
 
+    public function testDemoBannerShowsSharedEnvironmentAndNextReset(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('admin/layout.php', [
+            'title' => '管理画面',
+            'content' => '',
+            'flash' => null,
+            'csrfToken' => 'test-token',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+            'demoMode' => true,
+            'demoNextResetAt' => '2026年10月1日 22:00',
+        ]);
+
+        self::assertStringContainsString('公開デモ環境です', $html);
+        self::assertStringContainsString('本名・実在する住所', $html);
+        self::assertStringContainsString('2026年10月1日 22:00', $html);
+    }
+
+    public function testDemoBackupPageDoesNotRenderOperationForms(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('admin/backup.php', [
+            'demoMode' => true,
+            'error' => null,
+        ]);
+
+        self::assertStringContainsString('公開デモでは使用できません', $html);
+        self::assertStringNotContainsString('<form', $html);
+        self::assertStringNotContainsString('backup_file', $html);
+    }
+
+    public function testDemoApplicationFormRequiresDemoAcknowledgement(): void
+    {
+        $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');
+        $html = $renderer->render('participant/application-form.php', [
+            'demoMode' => true,
+            'demoAccepted' => false,
+            'input' => null,
+            'existing' => null,
+            'fields' => [],
+            'event' => ['privacy_purpose_text' => '利用目的'],
+            'errors' => [],
+            'csrfToken' => 'test-token',
+            'url' => static fn (string $path = ''): string => 'https://example.test/' . $path,
+        ]);
+
+        self::assertStringContainsString('必ず架空の情報を使用してください', $html);
+        self::assertStringContainsString('name="demo_accepted"', $html);
+        self::assertStringContainsString('架空の情報だけを入力しています', $html);
+    }
+
     public function testEscapedHomeTemplateOutput(): void
     {
         $renderer = new TemplateRenderer(dirname(__DIR__, 2) . '/templates');

@@ -15,6 +15,9 @@
         </aside>
 
         <h2>はじめて参加する</h2>
+        <?php if ($demoMode ?? false): ?>
+            <p class="demo-input-warning"><strong>デモ版の注意：</strong>ニックネームにも本名や所属先など個人を特定できる情報を入力しないでください。</p>
+        <?php endif; ?>
         <?php require dirname(__DIR__) . '/form-error-summary.php'; ?>
         <form method="post" action="<?= htmlspecialchars($url('join'), ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

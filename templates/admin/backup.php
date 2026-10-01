@@ -2,6 +2,13 @@
     <div><p class="eyebrow">MAINTENANCE</p><h1>バックアップ・復元</h1></div>
 </div>
 
+<?php if ($demoMode ?? false): ?>
+    <section class="panel">
+        <h2>公開デモでは使用できません</h2>
+        <p>バックアップの作成・ダウンロード・アップロード・検証・復元は、デモ環境の保護のため無効にしています。</p>
+    </section>
+<?php else: ?>
+
 <?php if ($error !== null): ?>
     <p class="error" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
 <?php endif; ?>
@@ -74,4 +81,5 @@
         </tr><?php endforeach; ?>
         </tbody></table></div>
     </section>
+<?php endif; ?>
 <?php endif; ?>

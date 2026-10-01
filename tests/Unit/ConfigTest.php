@@ -39,6 +39,7 @@ final class ConfigTest extends TestCase
         self::assertSame('development', $config->string('env'));
         self::assertFalse($config->bool('cookie_secure'));
         self::assertSame(str_repeat('a', 64), $config->string('spot_token_key'));
+        self::assertFalse($config->bool('demo_mode'));
     }
 
     public function testEnvironmentVariablesOverrideLocationValues(): void
@@ -54,6 +55,29 @@ final class ConfigTest extends TestCase
         $this->writeConfiguration(['env' => 'production']);
 
         $this->expectException(InvalidArgumentException::class);
+        Config::load($this->path);
+    }
+
+    public function testLoadsDemoModeInSafeProductionConfiguration(): void
+    {
+        $this->writeConfiguration([
+            'env' => 'production',
+            'base_url' => 'https://example.test/',
+            'debug' => false,
+            'cookie_secure' => true,
+            'allow_development_tools' => false,
+            'demo_mode' => true,
+        ]);
+
+        self::assertTrue(Config::load($this->path)->bool('demo_mode'));
+    }
+
+    public function testRejectsDemoModeInDevelopmentConfiguration(): void
+    {
+        $this->writeConfiguration(['demo_mode' => true]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Demo mode requires the production environment.');
         Config::load($this->path);
     }
 

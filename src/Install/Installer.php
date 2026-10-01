@@ -262,6 +262,7 @@ final class Installer
             'log_level' => $development ? 'debug' : 'error',
             'cookie_secure' => $secure,
             'allow_development_tools' => $development,
+            'demo_mode' => false,
             'database_path' => $databasePath,
             'database_busy_timeout_ms' => 5000,
             'session_name' => 'qr_rally_admin',

@@ -24,6 +24,7 @@
     </nav>
 </header>
 <main class="admin-main">
+    <?php require dirname(__DIR__) . '/demo-banner.php'; ?>
     <?php if ($flash !== null): ?>
         <p class="flash flash-<?= htmlspecialchars($flash['type'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($flash['message'], ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>

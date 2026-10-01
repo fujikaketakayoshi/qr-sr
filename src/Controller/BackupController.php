@@ -19,6 +19,7 @@ use QrRally\Security\CsrfToken;
 use QrRally\Session\Flash;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
+use QrRally\Support\DemoMode;
 use QrRally\View\TemplateRenderer;
 use Throwable;
 
@@ -39,6 +40,7 @@ final class BackupController
         private readonly BackupManager $backups,
         private readonly RestoreStateStore $states,
         private readonly string $baseUrl,
+        private readonly DemoMode $demoMode,
     ) {
     }
 
@@ -66,6 +68,9 @@ final class BackupController
     {
         if (($response = $this->requireAdmin()) !== null) {
             return $response;
+        }
+        if ($this->demoMode->enabled()) {
+            return $this->demoRestricted();
         }
         if (!$this->csrf->verify($request->input('_csrf'))) {
             return $this->csrfFailure();
@@ -101,6 +106,9 @@ final class BackupController
     {
         if (($response = $this->requireAdmin()) !== null) {
             return $response;
+        }
+        if ($this->demoMode->enabled()) {
+            return $this->demoRestricted();
         }
         if (!$this->csrf->verify($request->input('_csrf'))) {
             return $this->csrfFailure();
@@ -142,6 +150,9 @@ final class BackupController
         if (($response = $this->requireAdmin()) !== null) {
             return $response;
         }
+        if ($this->demoMode->enabled()) {
+            return $this->demoRestricted();
+        }
         if (!$this->csrf->verify($request->input('_csrf'))) {
             return $this->csrfFailure();
         }
@@ -181,6 +192,13 @@ final class BackupController
     private function csrfFailure(): Response
     {
         return $this->view('errors/419.php', ['title' => '操作を続けられません'], 419, false);
+    }
+
+    private function demoRestricted(): Response
+    {
+        return $this->view('errors/demo-restricted.php', [
+            'title' => '公開デモでは使用できません',
+        ], 403);
     }
 
     /** @param array<string, mixed> $data */

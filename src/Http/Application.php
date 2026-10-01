@@ -34,14 +34,14 @@ final class Application
     public function handle(Request $request): Response
     {
         $path = $request->path($this->baseUrl);
-        $isAdminPath = $path === '/admin' || str_starts_with($path, '/admin/');
-        if (!$isAdminPath && $this->restoreStates->isMaintenance()) {
-            return new Response($this->templates->render('errors/503.php'), 503, [
+        if ($this->restoreStates->isMaintenance()) {
+            return new Response($this->templates->render('errors/maintenance.php'), 503, [
                 'Content-Type' => 'text/html; charset=UTF-8',
                 'Cache-Control' => 'no-store',
                 'Retry-After' => '5',
             ]);
         }
+        $isAdminPath = $path === '/admin' || str_starts_with($path, '/admin/');
         if (!$isAdminPath && !$this->traffic->allowRequest($request->clientIp())) {
             return new Response($this->templates->render('errors/429.php'), 429, [
                 'Content-Type' => 'text/html; charset=UTF-8',

@@ -49,6 +49,9 @@ final class Config
             $values['spot_token_key'] = $values['app_key'];
         }
 
+        // Configurations created before demo mode was introduced remain valid.
+        $values['demo_mode'] ??= false;
+
         self::validate($values);
 
         return new self($values);
@@ -109,6 +112,7 @@ final class Config
             'log_level' => 'string',
             'cookie_secure' => 'boolean',
             'allow_development_tools' => 'boolean',
+            'demo_mode' => 'boolean',
             'database_path' => 'string',
             'database_busy_timeout_ms' => 'integer',
             'session_name' => 'string',
@@ -165,6 +169,10 @@ final class Config
             if (!str_starts_with($values['base_url'], 'https://') || !$values['cookie_secure']) {
                 throw new InvalidArgumentException('Production requires HTTPS and secure cookies.');
             }
+        }
+
+        if ($values['demo_mode'] && $values['env'] !== 'production') {
+            throw new InvalidArgumentException('Demo mode requires the production environment.');
         }
     }
 }

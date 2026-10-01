@@ -21,6 +21,7 @@ use QrRally\Security\CsrfToken;
 use QrRally\Session\Flash;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
+use QrRally\Support\DemoMode;
 use QrRally\View\TemplateRenderer;
 
 final class AdminController
@@ -39,6 +40,7 @@ final class AdminController
         private readonly EventValidator $eventValidator,
         private readonly AuditLogRepository $logs,
         private readonly string $timezone,
+        private readonly DemoMode $demoMode,
     ) {
     }
 
@@ -90,11 +92,17 @@ final class AdminController
 
     public function resetForm(): Response
     {
+        if ($this->demoMode->enabled()) {
+            return $this->demoRestricted(false);
+        }
         return $this->view('auth/reset.php', ['title' => 'パスワード再設定'], false);
     }
 
     public function reset(Request $request): Response
     {
+        if ($this->demoMode->enabled()) {
+            return $this->demoRestricted(false);
+        }
         if (!$this->csrf->verify($request->input('_csrf'))) {
             return $this->csrfFailure();
         }
@@ -236,6 +244,13 @@ final class AdminController
     private function csrfFailure(): Response
     {
         return $this->view('errors/419.php', ['title' => '操作を続けられません'], false, 419);
+    }
+
+    private function demoRestricted(bool $adminLayout = true): Response
+    {
+        return $this->view('errors/demo-restricted.php', [
+            'title' => '公開デモでは使用できません',
+        ], $adminLayout, 403);
     }
 
     /** @param array<string, mixed> $data */

@@ -7,4 +7,8 @@
     <label>パスワード<input type="password" name="password" autocomplete="current-password" required></label>
     <button type="submit">ログイン</button>
 </form>
-<p><a href="<?= htmlspecialchars($url('admin/password/reset'), ENT_QUOTES, 'UTF-8') ?>">パスワードを忘れた場合</a></p>
+<?php if ($demoMode ?? false): ?>
+    <p class="demo-disabled">公開デモでは、復旧キーを使ったパスワード再設定は利用できません。</p>
+<?php else: ?>
+    <p><a href="<?= htmlspecialchars($url('admin/password/reset'), ENT_QUOTES, 'UTF-8') ?>">パスワードを忘れた場合</a></p>
+<?php endif; ?>

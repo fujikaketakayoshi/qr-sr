@@ -23,6 +23,7 @@ use QrRally\Session\Flash;
 use QrRally\Support\UrlGenerator;
 use QrRally\Support\ViewData;
 use QrRally\Support\CsvValue;
+use QrRally\Support\DemoMode;
 use QrRally\View\TemplateRenderer;
 
 final class ApplicationController
@@ -44,6 +45,7 @@ final class ApplicationController
         private readonly AuditLogRepository $logs,
         private readonly CsvValue $csvValues,
         private readonly string $timezone,
+        private readonly DemoMode $demoMode,
     ) {
     }
 
@@ -89,7 +91,7 @@ final class ApplicationController
         return Response::redirect($this->urls->to('admin/applications/settings'));
     }
 
-    public function form(Request $request, array $errors = [], ?ApplicationInput $input = null, int $status = 200): Response
+    public function form(Request $request, array $errors = [], ?ApplicationInput $input = null, int $status = 200, bool $demoAccepted = false): Response
     {
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
@@ -103,9 +105,10 @@ final class ApplicationController
             $confirmed = $_SESSION['_application_confirmed'] ?? null;
             if (is_array($confirmed) && ($confirmed['participant_id'] ?? null) === (int) $participant['id']) {
                 $input = new ApplicationInput((array) $confirmed['values'], true);
+                $demoAccepted = (bool) ($confirmed['demo_accepted'] ?? false);
             }
         }
-        return $this->participantView('participant/application-form.php', compact('event', 'participant', 'fields', 'existing', 'input', 'errors'));
+        return $this->participantView('participant/application-form.php', compact('event', 'participant', 'fields', 'existing', 'input', 'errors', 'demoAccepted'));
     }
 
     public function confirm(Request $request): Response
@@ -123,9 +126,13 @@ final class ApplicationController
         $fields = $this->applications->fields();
         $existing = $this->applications->findForParticipant((int) $participant['id']);
         $errors = $this->validator->validate($input, $fields, $existing);
-        if ($errors !== []) return $this->form($request, $errors, $input, 422);
-        $_SESSION['_application_confirmed'] = ['participant_id' => (int) $participant['id'], 'values' => $input->values, 'privacy_accepted' => true];
-        return $this->participantView('participant/application-confirm.php', compact('event', 'participant', 'fields', 'input'));
+        $demoAccepted = $request->boolean('demo_accepted');
+        if ($this->demoMode->enabled() && !$demoAccepted) {
+            $errors['demo_accepted'] = '公開デモの注意事項を確認してください。';
+        }
+        if ($errors !== []) return $this->form($request, $errors, $input, 422, $demoAccepted);
+        $_SESSION['_application_confirmed'] = ['participant_id' => (int) $participant['id'], 'values' => $input->values, 'privacy_accepted' => true, 'demo_accepted' => $demoAccepted];
+        return $this->participantView('participant/application-confirm.php', compact('event', 'participant', 'fields', 'input', 'demoAccepted'));
     }
 
     public function submit(Request $request): Response
@@ -134,7 +141,7 @@ final class ApplicationController
         [$event, $participant, $blocked] = $this->participantContext($request);
         if ($blocked !== null) return $blocked;
         $confirmed = $_SESSION['_application_confirmed'] ?? null;
-        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null) || !is_array($confirmed) || ($confirmed['participant_id'] ?? null) !== (int) $participant['id']) return Response::redirect($this->urls->to('application'));
+        if (!ApplicationEligibility::canApply($event, $participant['completed_at'] !== null) || !is_array($confirmed) || ($confirmed['participant_id'] ?? null) !== (int) $participant['id'] || ($this->demoMode->enabled() && !($confirmed['demo_accepted'] ?? false))) return Response::redirect($this->urls->to('application'));
         $input = new ApplicationInput((array) $confirmed['values'], true);
         $fields = $this->applications->fields();
         $existing = $this->applications->findForParticipant((int) $participant['id']);
@@ -171,6 +178,7 @@ final class ApplicationController
     public function csv(): Response
     {
         if (($response = $this->requireAdmin()) !== null) return $response;
+        if ($this->demoMode->enabled()) return $this->demoRestricted();
         $fields = array_filter($this->applications->fields(), fn ($field) => (bool) $field['is_enabled']);
         $columns = ['nickname' => 'ニックネーム', 'stamp_count' => '取得数', 'first_seen_at' => '参加日時', 'last_seen_at' => '最終アクセス日時', 'completed_at' => '達成日時', 'application_number' => '応募番号'];
         foreach ($fields as $field) $columns[(string) $field['field_type']] = $this->validator->label((string) $field['field_type']);
@@ -181,6 +189,7 @@ final class ApplicationController
     public function applicationsCsv(): Response
     {
         if (($response = $this->requireAdmin()) !== null) return $response;
+        if ($this->demoMode->enabled()) return $this->demoRestricted();
         $fields = array_filter($this->applications->fields(), fn ($field) => (bool) $field['is_enabled']);
         $columns = ['application_number' => '応募番号', 'nickname' => 'ニックネーム', 'stamp_count' => '取得数', 'completed_at' => '達成日時'];
         foreach ($fields as $field) $columns[(string) $field['field_type']] = $this->validator->label((string) $field['field_type']);
@@ -200,6 +209,7 @@ final class ApplicationController
     private function requireAdmin(): ?Response { return $this->auth->id()===null?Response::redirect($this->urls->to('admin/login'),302):null; }
     private function guardAdminPost(Request $request): ?Response { if(($r=$this->requireAdmin())!==null)return $r; return !$this->csrf->verify($request->input('_csrf'))?$this->adminView('errors/419.php',[],'操作を続けられません',419):null; }
     private function participantCsrfFailure(): Response { return $this->participantView('errors/participant-419.php',['event'=>$this->events->find()],419); }
+    private function demoRestricted(): Response { return $this->adminView('errors/demo-restricted.php', [], '公開デモでは使用できません', 403); }
     /** @param array<string,string> $columns @param list<array<string,mixed>> $rows */
     private function csvResponse(array $columns,array $rows,string $logEvent,string $filename):Response{ $stream=fopen('php://temp','r+'); fwrite($stream,"\xEF\xBB\xBF"); fputcsv($stream,array_map(fn($value)=>$this->csvValues->safe($value),array_values($columns))); foreach($rows as $row){$line=[];foreach(array_keys($columns) as $key)$line[]=$this->csvValues->safe((string)($row[$key]??''));fputcsv($stream,$line);} rewind($stream);$body=stream_get_contents($stream);fclose($stream);$this->logs->record($logEvent,'admin',$this->auth->id(),'success');return new Response((string)$body,200,['Content-Type'=>'text/csv; charset=UTF-8','Content-Disposition'=>'attachment; filename="'.$filename.'"','Cache-Control'=>'private, no-store','X-Content-Type-Options'=>'nosniff']); }
     private function adminView(string $template,array $data,string $title,int $status=200):Response{return new Response($this->templates->renderWithLayout($template,array_merge($this->views->common(),$data,['title'=>$title])),$status);}

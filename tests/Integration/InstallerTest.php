@@ -56,6 +56,7 @@ final class InstallerTest extends TestCase
         self::assertFileExists($private . '/storage/app.sqlite');
         $config = require $this->publicConfig;
         self::assertSame($private . '/storage/app.sqlite', $config['database_path']);
+        self::assertFalse($config['demo_mode']);
         self::assertSame('http://localhost/qr-sr/admin/login', $result['login_url']);
         self::assertNotContains(false, $result['path_diagnostics']);
         self::assertStringNotContainsString($result['recovery_key'], (string) file_get_contents($this->publicConfig));

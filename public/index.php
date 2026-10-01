@@ -43,6 +43,7 @@ use QrRally\Support\QrCodeGenerator;
 use QrRally\Support\DownloadFilename;
 use QrRally\Support\CsvValue;
 use QrRally\Support\PrintPdfGenerator;
+use QrRally\Support\DemoMode;
 use QrRally\Domain\SpotValidator;
 use QrRally\View\TemplateRenderer;
 
@@ -87,6 +88,8 @@ $sessions->start(
 $csrf = new CsrfToken();
 $flash = new Flash();
 $urls = new UrlGenerator($config->string('base_url'));
+$demoMode = new DemoMode($config->bool('demo_mode'), $config->string('timezone'));
+$viewData = new ViewData($urls, $csrf, $flash, $demoMode);
 $database = $container['database'];
 $traffic = new TrafficMonitor(
     dirname($config->string('database_path')) . '/runtime/traffic.sqlite',
@@ -106,7 +109,7 @@ $auth = new AdminAuth(
 $spotRepository = new SpotRepository($database, new SpotToken($config->string('spot_token_key')));
 $controller = new AdminController(
     $templates,
-    new ViewData($urls, $csrf, $flash),
+    $viewData,
     $urls,
     $csrf,
     $flash,
@@ -123,10 +126,11 @@ $controller = new AdminController(
     new EventValidator(),
     $logs,
     $config->string('timezone'),
+    $demoMode,
 );
 $spotController = new SpotController(
     $templates,
-    new ViewData($urls, $csrf, $flash),
+    $viewData,
     $urls,
     $csrf,
     $flash,
@@ -137,11 +141,12 @@ $spotController = new SpotController(
     new SpotValidator(),
     new QrCodeGenerator(),
     new DownloadFilename(),
+    $demoMode,
 );
 $participantToken = new ParticipantToken();
 $participantController = new ParticipantController(
     $templates,
-    new ViewData($urls, $csrf, $flash),
+    $viewData,
     $urls,
     $csrf,
     new EventRepository($database),
@@ -159,15 +164,16 @@ $participantController = new ParticipantController(
     $traffic,
 );
 $applicationController = new ApplicationController(
-    $templates, new ViewData($urls, $csrf, $flash), $urls, $csrf, $flash, $auth,
+    $templates, $viewData, $urls, $csrf, $flash, $auth,
     new EventRepository($database), new ParticipantRepository($database, $participantToken),
     new ApplicationRepository($database), new ApplicationValidator(), $participantToken, $logs, new CsvValue(),
     $config->string('timezone'),
+    $demoMode,
 );
 $privateStorage = dirname($config->string('database_path'));
 $printController = new PrintController(
     $templates,
-    new ViewData($urls, $csrf, $flash),
+    $viewData,
     $urls,
     $auth,
     new EventRepository($database),
@@ -189,7 +195,7 @@ $backupManager = new BackupManager(
 );
 $backupController = new BackupController(
     $templates,
-    new ViewData($urls, $csrf, $flash),
+    $viewData,
     $urls,
     $csrf,
     $flash,
@@ -202,6 +208,7 @@ $backupController = new BackupController(
     $backupManager,
     $restoreStates,
     $config->string('base_url'),
+    $demoMode,
 );
 $request = Request::fromGlobals();
 

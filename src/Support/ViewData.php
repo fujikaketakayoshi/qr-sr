@@ -13,6 +13,7 @@ final class ViewData
         private readonly UrlGenerator $urls,
         private readonly CsrfToken $csrf,
         private readonly Flash $flash,
+        private readonly DemoMode $demoMode,
     ) {
     }
 
@@ -23,6 +24,8 @@ final class ViewData
             'url' => fn (string $path = ''): string => $this->urls->to($path),
             'csrfToken' => $this->csrf->get(),
             'flash' => $this->flash->pull(),
+            'demoMode' => $this->demoMode->enabled(),
+            'demoNextResetAt' => $this->demoMode->nextResetAt(),
         ];
     }
 }

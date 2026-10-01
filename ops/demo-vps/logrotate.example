@@ -1,0 +1,10 @@
+# パス、所有者、グループはVPSの実値へ置き換える。
+/var/www/qr-sr-demo/private/logs/demo-reset.log {
+    daily
+    rotate 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0600 fjkk fjkk
+}

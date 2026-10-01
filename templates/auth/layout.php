@@ -9,6 +9,7 @@
 <body>
 <main class="auth-card">
     <a class="brand" href="<?= htmlspecialchars($url(), ENT_QUOTES, 'UTF-8') ?>">QRコードスタンプラリー</a>
+    <?php require dirname(__DIR__) . '/demo-banner.php'; ?>
     <?= $content ?>
 </main>
 </body>
