@@ -4,6 +4,14 @@ QRコードを読み取ってスタンプを集めるデジタルスタンプラ
 
 現在の製品バージョンは [`VERSION`](VERSION) を参照してください。
 
+- [公式サイト](https://fujikake-products.com/qr-sr/)
+- [公開デモと利用案内](https://fujikake-products.com/qr-sr/demo/)
+- [インストール手順](INSTALL.md)
+
+## English overview
+
+QR Code Stamp Rally is a self-hosted PHP 8.3 and SQLite web application for running small-scale digital stamp rally events. Participants collect stamps by scanning QR codes with a regular smartphone browser, while organizers configure the event, print QR codes, review statistics, export CSV files, and manage backups through the web interface. See the [official website](https://fujikake-products.com/qr-sr/) for the distributed package and current information.
+
 ## 主な機能
 
 - ニックネームによる参加とCookieを使った参加者識別
@@ -42,6 +50,8 @@ XServerスタンダードでの実測を基に、次を小規模イベント向�
 ## インストール
 
 配布ZIPを利用する場合は [INSTALL.md](INSTALL.md) に従ってください。概要は次のとおりです。
+
+GitHubがタグやコミットから自動生成する「Source code (zip)」「Source code (tar.gz)」は、一般利用者向けの配布ZIPではありません。設置には、公式サイトで案内する検証済み配布ZIPを使用してください。
 
 1. 必要に応じて、ZIPとSHA-256を照合する
 2. HTTPS、PHP 8.3、エラー非表示、サーバーキャッシュ等を確認する
