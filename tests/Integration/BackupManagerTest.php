@@ -55,7 +55,7 @@ final class BackupManagerTest extends TestCase
         $backup = $this->manager->create();
         self::assertSame('qr-stamp-rally', $backup['manifest']['product']);
         self::assertSame(1, $backup['manifest']['backup_version']);
-        self::assertSame('0.1.0', $backup['manifest']['product_version']);
+        self::assertSame('0.1.1', $backup['manifest']['product_version']);
         self::assertSame(1, $backup['manifest']['table_counts']['admins']);
         self::assertSame(1, $backup['manifest']['table_counts']['backup_secrets']);
 
@@ -169,7 +169,7 @@ final class BackupManagerTest extends TestCase
         $this->manager->restore($validated['database_path'], $validated['manifest'], $states, 1);
 
         $restored = (new ConnectionFactory())->connect($this->databasePath, 1000);
-        self::assertSame('0.1.0', $restored->query(
+        self::assertSame('0.1.1', $restored->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
         )->fetchColumn());
         self::assertSame('1', $restored->query(

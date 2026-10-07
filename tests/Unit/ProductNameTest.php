@@ -41,12 +41,12 @@ final class ProductNameTest extends TestCase
         self::assertStringContainsString('QRコードは株式会社デンソーウェーブの登録商標です。', $contents, $path);
     }
 
-    public function testReleaseNotesPreserveThePublishedNameAndDescribeTheUpcomingRename(): void
+    public function testReleaseNotesPreserveThePreviousNameAndDescribeTheCurrentRelease(): void
     {
         $notes = file_get_contents(dirname(__DIR__, 2) . '/RELEASE_NOTES.md');
 
         self::assertIsString($notes);
-        self::assertStringContainsString('## 次回リリース予定', $notes);
+        self::assertStringContainsString('## 0.1.1', $notes);
         self::assertStringContainsString('製品名を「QRコードスタンプラリー」へ統一', $notes);
         self::assertStringContainsString('QRデジタルスタンプラリーの初回正式版です。', $notes);
     }
