@@ -14,7 +14,7 @@
             <dd><?= htmlspecialchars($displayStartsAt, ENT_QUOTES, 'UTF-8') ?> ～ <?= htmlspecialchars($displayEndsAt, ENT_QUOTES, 'UTF-8') ?></dd>
         </div>
     </dl>
-    <p><strong><?= htmlspecialchars($participant['nickname'], ENT_QUOTES, 'UTF-8') ?></strong> さんのスタンプ：<strong><?= (int) $acquisitionCount ?> / <?= (int) $event['required_stamp_count'] ?></strong></p>
+    <p><?php if ($participant['nickname'] !== ''): ?><strong><?= htmlspecialchars($participant['nickname'], ENT_QUOTES, 'UTF-8') ?></strong> さんの<?php endif; ?>スタンプ：<strong><?= (int) $acquisitionCount ?> / <?= (int) $event['required_stamp_count'] ?></strong></p>
     <?php if ($eventStatus->value === 'paused'): ?>
         <p class="error"><?= nl2br(htmlspecialchars($event['pause_message'] ?: 'イベントは現在一時停止中です。', ENT_QUOTES, 'UTF-8')) ?></p>
     <?php endif; ?>
@@ -44,6 +44,9 @@
         </div>
     <?php endif; ?>
 </section>
+<?php if ($participant['nickname'] === ''): ?>
+    <?php require __DIR__ . '/join.php'; ?>
+<?php endif; ?>
 <section>
     <h2>スタンプ台紙</h2>
     <div class="stamp-grid">

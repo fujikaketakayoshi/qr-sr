@@ -82,6 +82,14 @@ final class ParticipantRepository
         return (int) $statement->fetchColumn();
     }
 
+    public function registerNickname(int $participantId, string $nickname): void
+    {
+        $this->writes->run(function () use ($participantId, $nickname): void {
+            $statement = $this->database->prepare("UPDATE participants SET nickname = :nickname, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = :id AND nickname = ''");
+            $statement->execute(['nickname' => $nickname, 'id' => $participantId]);
+        });
+    }
+
     /** @return list<array<string, mixed>> */
     public function stampBoard(int $participantId): array
     {

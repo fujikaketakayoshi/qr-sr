@@ -14,7 +14,7 @@ QR Code Stamp Rally is a self-hosted PHP 8.3 and SQLite web application for runn
 
 ## 主な機能
 
-- ニックネームによる参加とCookieを使った参加者識別
+- Cookieを使った参加者識別と、任意のニックネーム登録
 - イベント期間、達成数、一時停止、参加者向け案内の設定
 - スポットの追加、編集、並べ替え、停止、削除、QRコード再発行
 - イベント入口・スポットQRコードの印刷、SVG・PDF出力

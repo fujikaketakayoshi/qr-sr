@@ -35,6 +35,11 @@ final class Response
         return $this->status;
     }
 
+    public function withHeader(string $name, string $value): self
+    {
+        return new self($this->body, $this->status, array_merge($this->headers, [$name => $value]));
+    }
+
     public static function redirect(string $url, int $status = 303): self
     {
         return new self('', $status, ['Location' => $url]);

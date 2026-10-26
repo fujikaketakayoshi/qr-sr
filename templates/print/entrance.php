@@ -9,7 +9,7 @@
             <h2>参加方法</h2>
             <ol>
                 <li>標準カメラでQRコードを読み取る</li>
-                <li>ニックネームを登録する</li>
+                <li>台紙を開く（ニックネームの登録は任意です）</li>
                 <li>各スポットでスタンプを集める</li>
                 <li><?= (int) $event['required_stamp_count'] ?>個集めて達成<?= $event['application_enabled'] ? '・応募' : '' ?></li>
             </ol>
