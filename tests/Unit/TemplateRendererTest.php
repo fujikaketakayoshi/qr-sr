@@ -39,7 +39,7 @@ final class TemplateRendererTest extends TestCase
         ]);
 
         self::assertStringContainsString('公開デモ環境です', $html);
-        self::assertStringContainsString('本名・実在する住所', $html);
+        self::assertStringContainsString('入力内容は第三者にも見られます。実在する個人情報は入力しないでください。', $html);
         self::assertStringContainsString('2026年10月1日 22:00', $html);
     }
 

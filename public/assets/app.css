@@ -91,6 +91,9 @@ button:disabled { cursor: not-allowed; opacity: .35; }
 .qr-image { display: block; width: min(100%, 28rem); margin: 0 auto; }
 .qr-url { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
 .qr-actions { justify-content: center; }
+.qr-presentation { width: min(100% - 2rem, 48rem); margin: 1rem auto; }
+.qr-presentation h1, .presentation-event { overflow-wrap: anywhere; }
+.qr-presentation .qr-image { width: min(100%, 32rem); height: auto; background: #fff; }
 .participant-header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem max(1rem, calc((100% - 48rem) / 2)); background: #fff; border-bottom: 1px solid #dfe7e4; }
 .participant-main { width: min(calc(100% - 2rem), 48rem); margin: 1.5rem auto 4rem; }
 .participant-hero { margin-bottom: 1.5rem; }

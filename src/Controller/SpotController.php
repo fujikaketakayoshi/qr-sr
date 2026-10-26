@@ -214,7 +214,7 @@ final class SpotController
         try {
             $this->spots->reissueToken($id);
             $this->logs->record('spot.qr_reissued', 'admin', $this->auth->id(), 'success', [], 'spot', $id);
-            $this->flash->set('success', 'QRコードを再発行しました。古いQRコードは無効です。');
+            $this->flash->set('success', 'QRコードを再発行しました。古いQRコードと提示用URLは無効です。担当者へ新しい提示用URLを共有し直してください。');
         } catch (RuntimeException $error) {
             $this->flash->set('error', $error->getMessage());
         }
@@ -238,6 +238,7 @@ final class SpotController
             'title' => 'QRコード確認',
             'spot' => $spot,
             'publicUrl' => $publicUrl,
+            'presentationUrl' => $this->urls->to('spot/' . $this->spots->publicToken($spot) . '/qr'),
             'qrDataUri' => 'data:image/svg+xml;base64,' . base64_encode($this->qrCodes->svg($publicUrl)),
         ]);
     }
@@ -280,6 +281,29 @@ final class SpotController
             'spot' => $spot,
             'assetUrl' => $this->urls->to('assets/app.css'),
         ]));
+    }
+
+    public function presentation(string $token): Response
+    {
+        $spot = $this->spots->findByPublicToken($token);
+        $event = $this->events->find();
+        if ($spot === null || $event === null) {
+            return $this->notFound()->withHeader('Cache-Control', 'no-store');
+        }
+
+        return new Response($this->templates->render('spot-presentation.php', array_merge(
+            $this->views->common(),
+            [
+                'event' => $event,
+                'spot' => $spot,
+                'qrDataUri' => 'data:image/svg+xml;base64,' . base64_encode($this->qrCodes->svg($this->publicUrl($spot))),
+            ],
+        )), 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'private, no-store',
+            'X-Robots-Tag' => 'noindex, nofollow',
+            'Referrer-Policy' => 'no-referrer',
+        ]);
     }
 
     public function resolveManagementId(string $token): ?int
