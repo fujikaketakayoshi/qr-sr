@@ -15,6 +15,7 @@
         <h1><?= htmlspecialchars($spot['name'], ENT_QUOTES, 'UTF-8') ?></h1>
         <img class="qr-image" src="<?= htmlspecialchars($qrDataUri, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($spot['name'], ENT_QUOTES, 'UTF-8') ?>のスタンプ取得用QRコード">
         <p>スマートフォンの標準カメラで読み取ってください。</p>
+        <a class="button secondary" href="<?= htmlspecialchars($printUrl, ENT_QUOTES, 'UTF-8') ?>">印刷画面を開く</a>
     </section>
 </main>
 </body>

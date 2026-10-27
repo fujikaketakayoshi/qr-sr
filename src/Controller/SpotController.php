@@ -283,7 +283,7 @@ final class SpotController
         ]));
     }
 
-    public function presentation(string $token): Response
+    public function presentation(string $token, bool $print = false): Response
     {
         $spot = $this->spots->findByPublicToken($token);
         $event = $this->events->find();
@@ -291,14 +291,27 @@ final class SpotController
             return $this->notFound()->withHeader('Cache-Control', 'no-store');
         }
 
-        return new Response($this->templates->render('spot-presentation.php', array_merge(
+        $qrDataUri = 'data:image/svg+xml;base64,' . base64_encode($this->qrCodes->svg($this->publicUrl($spot)));
+        $data = array_merge(
             $this->views->common(),
             [
                 'event' => $event,
                 'spot' => $spot,
-                'qrDataUri' => 'data:image/svg+xml;base64,' . base64_encode($this->qrCodes->svg($this->publicUrl($spot))),
+                'qrDataUri' => $qrDataUri,
+                'printUrl' => $this->urls->to('spot/' . $token . '/print'),
             ],
-        )), 200, [
+        );
+        if ($print) {
+            $data['spot']['qr_data_uri'] = $qrDataUri;
+            $data['title'] = (string) $spot['name'] . ' 印刷用QRコード';
+            $data['returnPath'] = 'spot/' . $token . '/qr';
+            $data['returnLabel'] = '提示用QRコードへ戻る';
+            $body = $this->templates->renderWithLayout('print/spot.php', $data, 'print/layout.php');
+        } else {
+            $body = $this->templates->render('spot-presentation.php', $data);
+        }
+
+        return new Response($body, 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
             'Cache-Control' => 'private, no-store',
             'X-Robots-Tag' => 'noindex, nofollow',

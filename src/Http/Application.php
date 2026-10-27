@@ -124,6 +124,9 @@ final class Application
         if ($request->method() === 'GET' && preg_match('#^/spot/([0-9a-f-]{36})/qr$#D', $path, $matches)) {
             return $this->spots->presentation($matches[1]);
         }
+        if ($request->method() === 'GET' && preg_match('#^/spot/([0-9a-f-]{36})/print$#D', $path, $matches)) {
+            return $this->spots->presentation($matches[1], true);
+        }
         if ($request->method() === 'GET' && preg_match('#^/spot/([^/]+)$#D', $path, $matches)) {
             return $this->participants->spot($request, $matches[1]);
         }

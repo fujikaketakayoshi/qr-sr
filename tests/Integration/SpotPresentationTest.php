@@ -98,6 +98,7 @@ final class SpotPresentationTest extends TestCase
         foreach (["is_paused = 1", "is_paused = 0, starts_at = '2100-01-01T00:00:00Z', ends_at = '2101-01-01T00:00:00Z'", "starts_at = '2000-01-01T00:00:00Z', ends_at = '2001-01-01T00:00:00Z'"] as $update) {
             $this->database->exec('UPDATE events SET ' . $update);
             self::assertSame(200, $this->controller->presentation($this->token)->status());
+            self::assertSame(200, $this->controller->presentation($this->token, true)->status());
         }
     }
 
@@ -107,10 +108,12 @@ final class SpotPresentationTest extends TestCase
         $response = $this->controller->reissue(new Request([], [], ['_csrf' => $this->csrf->get()]), 1);
         self::assertSame(303, $response->status());
         self::assertSame(404, $this->controller->presentation($this->token)->status());
+        self::assertSame(404, $this->controller->presentation($this->token, true)->status());
         self::assertNull($this->spots->findByPublicToken($this->token));
         $new = $this->spots->publicToken($this->spots->find(1));
         self::assertNotSame($this->token, $new);
         self::assertSame(200, $this->controller->presentation($new)->status());
+        self::assertSame(200, $this->controller->presentation($new, true)->status());
         self::assertNotNull($this->spots->findByPublicToken($new));
     }
 
@@ -147,5 +150,35 @@ final class SpotPresentationTest extends TestCase
         self::assertStringNotContainsString('<img src=x', $body);
         self::assertStringContainsString('&lt;script&gt;', $body);
         self::assertStringContainsString('&lt;img src=x', $body);
+        $print = $this->controller->presentation($this->token, true)->body();
+        self::assertStringNotContainsString('<script>', $print);
+        self::assertStringNotContainsString('<img src=x', $print);
+    }
+
+    public function testPublicPrintUsesExistingPrintLayoutWithoutAdminLinksOrParticipation(): void
+    {
+        $presentation = $this->controller->presentation($this->token)->body();
+        self::assertStringContainsString('印刷画面を開く', $presentation);
+        self::assertStringContainsString('https://example.test/rally/spot/' . $this->token . '/print', $presentation);
+        $response = $this->controller->presentation($this->token, true);
+        self::assertSame(200, $response->status());
+        $body = $response->body();
+        self::assertStringContainsString('印刷する', $body);
+        self::assertStringContainsString('window.print()', $body);
+        self::assertStringContainsString('提示用QRコードへ戻る', $body);
+        self::assertStringContainsString('https://example.test/rally/spot/' . $this->token . '/qr', $body);
+        self::assertStringContainsString('https://example.test/rally/assets/print.css', $body);
+        self::assertStringNotContainsString('/admin/', $body);
+        $qr = 'data:image/svg+xml;base64,' . base64_encode((new QrCodeGenerator())->svg('https://example.test/rally/spot/' . $this->token));
+        self::assertStringContainsString($qr, $body);
+        $headers = (new \ReflectionProperty(\QrRally\Http\Response::class, 'headers'))->getValue($response);
+        self::assertArrayNotHasKey('Set-Cookie', $headers);
+        self::assertSame('private, no-store', $headers['Cache-Control']);
+        self::assertSame('noindex, nofollow', $headers['X-Robots-Tag']);
+        self::assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM participants')->fetchColumn());
+        self::assertSame(0, (int) $this->database->query('SELECT COUNT(*) FROM stamp_acquisitions')->fetchColumn());
+        self::assertSame(404, $this->controller->presentation('invalid', true)->status());
+        $this->spots->delete(1);
+        self::assertSame(404, $this->controller->presentation($this->token, true)->status());
     }
 }
