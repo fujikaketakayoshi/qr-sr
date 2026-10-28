@@ -55,7 +55,7 @@ final class BackupManagerTest extends TestCase
         $backup = $this->manager->create();
         self::assertSame('qr-stamp-rally', $backup['manifest']['product']);
         self::assertSame(1, $backup['manifest']['backup_version']);
-        self::assertSame('0.1.1', $backup['manifest']['product_version']);
+        self::assertSame('0.1.2', $backup['manifest']['product_version']);
         self::assertSame(1, $backup['manifest']['table_counts']['admins']);
         self::assertSame(1, $backup['manifest']['table_counts']['backup_secrets']);
 
@@ -169,13 +169,61 @@ final class BackupManagerTest extends TestCase
         $this->manager->restore($validated['database_path'], $validated['manifest'], $states, 1);
 
         $restored = (new ConnectionFactory())->connect($this->databasePath, 1000);
-        self::assertSame('0.1.1', $restored->query(
+        self::assertSame('0.1.2', $restored->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
         )->fetchColumn());
         self::assertSame('1', $restored->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'schema_version'",
         )->fetchColumn());
         $this->database = $restored;
+    }
+
+    #[DataProvider('releasedVersionProvider')]
+    public function testReleasedBackupInstallsWithCurrentVersionAndPreservesData(string $version): void
+    {
+        $tokens = new \QrRally\Security\ParticipantToken();
+        $participants = new \QrRally\Repository\ParticipantRepository($this->database, $tokens);
+        $participantId = $participants->create($tokens->generate(), '');
+        $spots = new \QrRally\Repository\SpotRepository($this->database, new \QrRally\Security\SpotToken(str_repeat('a', 64)));
+        $spotId = $spots->create(new \QrRally\Domain\SpotInput('互換性確認', ''));
+        $participants->acquire($participantId, $spotId, null);
+        $before = [];
+        foreach (['admins', 'participants', 'spots', 'stamp_acquisitions'] as $table) {
+            $before[$table] = $this->database->query('SELECT * FROM ' . $table . ' ORDER BY id')->fetchAll();
+        }
+        $statement = $this->database->prepare("UPDATE app_settings SET setting_value = :version WHERE setting_key = 'product_version'");
+        $statement->execute(['version' => $version]);
+        $backup = $this->manager->create();
+        self::assertSame($version, $backup['manifest']['product_version']);
+        self::assertSame(1, $backup['manifest']['backup_version']);
+        self::assertSame('1', $backup['manifest']['schema_version']);
+        $validated = $this->manager->validateUploadedForInstall($backup['path'], (int) filesize($backup['path']));
+        $path = $this->directory . '/installed-' . $version . '.sqlite';
+        $this->manager->installValidatedDatabase($validated['database_path'], $path, $validated['manifest']);
+        $restored = (new ConnectionFactory())->connect($path, 1000);
+        self::assertSame('0.1.2', $restored->query("SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'")->fetchColumn());
+        foreach ($before as $table => $rows) {
+            self::assertSame($rows, $restored->query('SELECT * FROM ' . $table . ' ORDER BY id')->fetchAll());
+        }
+        self::assertSame(str_repeat('a', 64), $this->manager->consumeSpotTokenKey($restored));
+        self::assertSame('ok', $restored->query('PRAGMA integrity_check')->fetchColumn());
+        self::assertSame([], $restored->query('PRAGMA foreign_key_check')->fetchAll());
+    }
+
+    public static function releasedVersionProvider(): iterable
+    {
+        yield '0.1.0' => ['0.1.0'];
+        yield '0.1.1' => ['0.1.1'];
+    }
+
+    public function testCurrentBackupIsRejectedByOlderRunningDatabaseVersion(): void
+    {
+        $backup = $this->manager->create();
+        self::assertSame('0.1.2', $backup['manifest']['product_version']);
+        $this->database->exec("UPDATE app_settings SET setting_value = '0.1.1' WHERE setting_key = 'product_version'");
+        $this->expectException(BackupException::class);
+        $this->expectExceptionMessage('新しい製品バージョンのバックアップは復元できません');
+        $this->manager->validateUploaded($backup['path'], (int) filesize($backup['path']));
     }
 
     public function testRejectsHashMismatchWithoutChangingCurrentDatabase(): void

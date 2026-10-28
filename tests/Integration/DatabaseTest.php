@@ -54,7 +54,7 @@ final class DatabaseTest extends TestCase
         self::assertSame('ok', $this->database->query('PRAGMA integrity_check')->fetchColumn());
         self::assertSame(5, (int) $this->database->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(4, (int) $this->database->query('SELECT COUNT(*) FROM application_fields')->fetchColumn());
-        self::assertSame('0.1.1', $this->database->query(
+        self::assertSame('0.1.2', $this->database->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
         )->fetchColumn());
     }
@@ -68,7 +68,7 @@ final class DatabaseTest extends TestCase
         );
 
         self::assertSame([], $migrator->migrate());
-        self::assertSame('0.1.1', $this->database->query(
+        self::assertSame('0.1.2', $this->database->query(
             "SELECT setting_value FROM app_settings WHERE setting_key = 'product_version'",
         )->fetchColumn());
         self::assertSame('1', $this->database->query(
